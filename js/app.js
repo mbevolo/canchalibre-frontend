@@ -363,7 +363,7 @@ async function reverseGeocode(lat, lon) {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
 
     const res = await fetch(url, {
-      headers: { "User-Agent": "TurnoLibre/1.0" }
+      headers: { "User-Agent": "CanchaLibre/1.0" }
     });
 
     const data = await res.json();

@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'dashboard':
         content.innerHTML = `
           <h2>Dashboard</h2>
-          <p>Resumen general de TurnoLibre.</p>
+          <p>Resumen general de CanchaLibre.</p>
         `;
         break;
       case 'clubes':
