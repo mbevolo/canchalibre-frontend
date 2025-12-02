@@ -31,10 +31,14 @@ async function postJSON(path, body) {
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
   let data = null;
-  try { data = await r.json(); } catch (_) { data = {}; }
+  try {
+    data = await r.json();
+  } catch (_) {
+    data = {};
+  }
   return { ok: r.ok, status: r.status, data };
 }
 
@@ -45,22 +49,32 @@ const formRegistro = document.getElementById('form-registro');
 if (formRegistro) {
   formRegistro.addEventListener('submit', async (e) => {
     e.preventDefault();
-        // Validar aceptación de términos
-    const checkbox = document.getElementById("aceptoTerminos");
+    // Validar aceptación de términos
+    const checkbox = document.getElementById('aceptoTerminos');
     if (!checkbox || !checkbox.checked) {
-        alert("Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.");
-        return;
+      alert(
+        'Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.'
+      );
+      return;
     }
 
-
     const nombre = document.getElementById('nombre')?.value?.trim() || '';
-    const apellido = document.getElementById('apellido')?.value?.trim() || '';
-    const telefono = normalizarTelefonoFront(document.getElementById('telefono')?.value || '');
+    const apellido =
+      document.getElementById('apellido')?.value?.trim() || '';
+    const telefono = normalizarTelefonoFront(
+      document.getElementById('telefono')?.value || ''
+    );
     const email = document.getElementById('email')?.value?.trim() || '';
     const password = document.getElementById('password')?.value || '';
 
     try {
-      const { ok, data } = await postJSON('/registrar', { nombre, apellido, telefono, email, password });
+      const { ok, data } = await postJSON('/registrar', {
+        nombre,
+        apellido,
+        telefono,
+        email,
+        password,
+      });
       if (!ok) {
         alert(data?.error || 'No se pudo registrar el usuario.');
         return;
@@ -92,7 +106,10 @@ if (formLogin) {
     if (resendMsg) resendMsg.textContent = '';
 
     try {
-      const { ok, status, data } = await postJSON('/login', { email, password });
+      const { ok, status, data } = await postJSON('/login', {
+        email,
+        password,
+      });
 
       if (ok) {
         localStorage.setItem('usuarioLogueado', email);
@@ -104,7 +121,9 @@ if (formLogin) {
 
       if (status === 403) {
         // Mostrar mensaje de alerta y habilitar el bloque de reenvío
-        alert(data?.error || 'Debes verificar tu email antes de iniciar sesión');
+        alert(
+          data?.error || 'Debes verificar tu email antes de iniciar sesión'
+        );
 
         const resendEmail = document.getElementById('resend-email');
         if (resendEmail) resendEmail.value = email;
@@ -120,7 +139,6 @@ if (formLogin) {
     }
   });
 }
-
 
 // ============================
 //  Reenviar verificación (solo visible si falta verificar)
@@ -139,21 +157,28 @@ if (btnResend) {
     }
 
     try {
-      const { ok, data } = await postJSON('/reenviar-verificacion', { email });
+      const { ok, data } = await postJSON('/reenviar-verificacion', {
+        email,
+      });
       if (ok) {
-        if (resendMsg) resendMsg.textContent = 'Te enviamos un nuevo email de verificación.';
+        if (resendMsg)
+          resendMsg.textContent = 'Te enviamos un nuevo email de verificación.';
         else alert('Te enviamos un nuevo email de verificación.');
       } else {
-        if (resendMsg) resendMsg.textContent = data?.error || 'No se pudo reenviar la verificación.';
+        if (resendMsg)
+          resendMsg.textContent =
+            data?.error || 'No se pudo reenviar la verificación.';
         else alert(data?.error || 'No se pudo reenviar la verificación.');
       }
     } catch (err) {
       console.error('❌ Error reenviando verificación:', err);
-      if (resendMsg) resendMsg.textContent = 'Error de red. Intentá nuevamente.';
+      if (resendMsg)
+        resendMsg.textContent = 'Error de red. Intentá nuevamente.';
       else alert('Error de red. Intentá nuevamente.');
     }
   });
 }
+
 // ============================
 //  PANEL DEL USUARIO (datos personales)
 // ============================
@@ -176,7 +201,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const formUsuario = document.getElementById('form-usuario');
   if (formUsuario) {
     try {
-const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`));      const usuario = await res.json();
+      const res = await fetch(
+        apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`)
+      );
+      const usuario = await res.json();
       document.getElementById('nombre').value = usuario.nombre || '';
       document.getElementById('apellido').value = usuario.apellido || '';
       document.getElementById('telefono').value = usuario.telefono || '';
@@ -194,11 +222,14 @@ const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`));
         telefono: document.getElementById('telefono').value.trim(),
       };
       try {
-const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`), {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datos)
-        });
+        const res = await fetch(
+          apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`),
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos),
+          }
+        );
         const result = await res.json();
         alert(result.mensaje || 'Datos actualizados correctamente.');
       } catch (err) {
@@ -212,7 +243,6 @@ const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`), 
 // ============================
 //  MIS RESERVAS (usuario)
 // ============================
-
 document.addEventListener('DOMContentLoaded', async () => {
   // Usamos el contenedor que ya tenías en tu HTML
   const contenedor = document.getElementById('reservas-container');
@@ -220,26 +250,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const email = localStorage.getItem('usuarioLogueado');
   if (!email) {
-    contenedor.innerHTML = '<p>Debes iniciar sesión para ver tus reservas.</p>';
+    contenedor.innerHTML =
+      '<p>Debes iniciar sesión para ver tus reservas.</p>';
     return;
   }
 
   try {
-const res = await fetch(apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`));
+    const res = await fetch(
+      apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`)
+    );
     let reservas = await res.json();
 
     // 🔸 Separar pendientes (colección Reserva) de confirmadas (colección Turno)
-    const pendientes = reservas.filter(r => r.tipo === 'PENDING');
-    reservas = reservas.filter(r => r.tipo !== 'PENDING'); // confirmadas
+    const pendientes = reservas.filter((r) => r.tipo === 'PENDING');
+    reservas = reservas.filter((r) => r.tipo !== 'PENDING'); // confirmadas
 
     // 🔸 Helper para manejar fechas en 'YYYY-MM-DD' o 'DD/MM/YYYY'
     const toDate = (f, h) => {
       if (!f || !h) return null;
-      if (f.includes('-')) { // AAAA-MM-DD
+      if (f.includes('-')) {
+        // AAAA-MM-DD
         const [Y, M, D] = f.split('-').map(Number);
         const [hh, mm] = h.split(':').map(Number);
         return new Date(Y, M - 1, D, hh, mm);
-      } else { // DD/MM/AAAA
+      } else {
+        // DD/MM/AAAA
         const [D, M, Y] = f.split('/').map(Number);
         const [hh, mm] = h.split(':').map(Number);
         return new Date(Y, M - 1, D, hh, mm);
@@ -251,7 +286,7 @@ const res = await fetch(apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`)
     // 🔸 Confirmadas -> separar futuras/pasadas
     const confirmadasFuturas = [];
     const confirmadasPasadas = [];
-    reservas.forEach(r => {
+    reservas.forEach((r) => {
       const dt = toDate(r.fecha, r.hora);
       if (dt && dt >= ahora) confirmadasFuturas.push(r);
       else confirmadasPasadas.push(r);
@@ -260,14 +295,14 @@ const res = await fetch(apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`)
     // 🔸 Pendientes -> también separar por fecha para mostrarlas en Futuras o Pasadas
     const pendientesFuturas = [];
     const pendientesPasadas = [];
-    pendientes.forEach(r => {
+    pendientes.forEach((r) => {
       const dt = toDate(r.fecha, r.hora);
       if (dt && dt >= ahora) pendientesFuturas.push(r);
       else pendientesPasadas.push(r);
     });
 
     // 🔸 Ordenar por fecha/hora
-    const sortByDate = (a, b) => toDate(a.fecha, a.hora) - toDate(b.fecha, b.hora);
+    const sortByDate = (a, b) => toDate(a.fecha, a.hora) - toDate(a.fecha, a.hora);
     confirmadasFuturas.sort(sortByDate);
     confirmadasPasadas.sort(sortByDate);
     pendientesFuturas.sort(sortByDate);
@@ -277,42 +312,51 @@ const res = await fetch(apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`)
     const futuras = [...pendientesFuturas, ...confirmadasFuturas];
     const pasadas = [...pendientesPasadas, ...confirmadasPasadas];
 
-const cardReserva = (r) => {
-  const esPendiente = r.tipo === 'PENDING';
-  const estadoHtml = esPendiente
-    ? `<div class="p-2 bg-warning-subtle border border-warning rounded text-dark">
-         ⚠️ <b>Pendiente de confirmación</b><br>
-         <small>Confirmá tu reserva desde el correo o reenviá el mail.</small>
-       </div>`
-    : (r.pagado
+    const cardReserva = (r) => {
+      const esPendiente = r.tipo === 'PENDING';
+      const estadoHtml = esPendiente
+        ? `<div class="p-2 bg-warning-subtle border border-warning rounded text-dark">
+             ⚠️ <b>Pendiente de confirmación</b><br>
+             <small>Confirmá tu reserva desde el correo o reenviá el mail.</small>
+           </div>`
+        : r.pagado
         ? `<span class="badge text-bg-success">Pagado</span>`
-        : `<span class="badge text-bg-danger">Pendiente de pago</span>`);
+        : `<span class="badge text-bg-danger">Pendiente de pago</span>`;
 
       // Botonera
       let botones = '';
-     if (esPendiente) {
-  botones = `
-    <button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="${r._id}">🔁 Reenviar correo</button>
-    <button class="btn btn-sm btn-outline-danger ms-2 btn-cancelar-pendiente" data-id="${r._id}">Cancelar</button>
-  `;
-} else {
-  botones = `
-    <button class="btn btn-sm btn-danger btn-cancelar" data-id="${r._id}">Cancelar</button>
-    ${!r.pagado ? `<button class="btn btn-sm btn-success ms-2 btn-pagar" data-id="${r._id}">Pagar online</button>` : ''}
-  `;
-}
-
+      if (esPendiente) {
+        botones = `
+          <button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="${r._id}">🔁 Reenviar correo</button>
+          <button class="btn btn-sm btn-outline-danger ms-2 btn-cancelar-pendiente" data-id="${r._id}">Cancelar</button>
+        `;
+      } else {
+        botones = `
+          <button class="btn btn-sm btn-danger btn-cancelar" data-id="${r._id}">Cancelar</button>
+          ${
+            !r.pagado
+              ? `<button class="btn btn-sm btn-success ms-2 btn-pagar" data-id="${r._id}">Pagar online</button>`
+              : ''
+          }
+        `;
+      }
 
       // Nombre club + fecha/hora
       const [anio, mes, dia] = r.fecha.includes('-')
         ? r.fecha.split('-')
-        : [r.fecha.split('/')[2], r.fecha.split('/')[1], r.fecha.split('/')[0]];
+        : [
+            r.fecha.split('/')[2],
+            r.fecha.split('/')[1],
+            r.fecha.split('/')[0],
+          ];
       const fechaBonita = `${dia}/${mes}/${anio}`;
 
-return `
-  <div class="card mb-2 shadow-sm ${esPendiente ? 'border-warning-subtle bg-warning-subtle' : ''}">
-    <div class="card-body d-flex justify-content-between align-items-center">
- <div>
+      return `
+        <div class="card mb-2 shadow-sm ${
+          esPendiente ? 'border-warning-subtle bg-warning-subtle' : ''
+        }">
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
               <div class="fw-bold">${r.nombreClub || 'Club'}</div>
               <div>📅 ${fechaBonita} — 🕒 ${r.hora}</div>
               <div class="mt-1">${estadoHtml}</div>
@@ -343,16 +387,20 @@ return `
     `;
 
     // 🔸 Toggle “Ver reservas pasadas”
-    document.getElementById('toggle-pasadas')?.addEventListener('click', () => {
-      const box = document.getElementById('reservas-pasadas');
-      const visible = box.style.display !== 'none';
-      box.style.display = visible ? 'none' : 'block';
-      document.getElementById('toggle-pasadas').textContent = visible ? 'Ver reservas pasadas' : 'Ocultar reservas pasadas';
-    });
-
+    document
+      .getElementById('toggle-pasadas')
+      ?.addEventListener('click', () => {
+        const box = document.getElementById('reservas-pasadas');
+        const visible = box.style.display !== 'none';
+        box.style.display = visible ? 'none' : 'block';
+        document.getElementById('toggle-pasadas').textContent = visible
+          ? 'Ver reservas pasadas'
+          : 'Ocultar reservas pasadas';
+      });
   } catch (err) {
     console.error('❌ Error al cargar reservas:', err);
-    contenedor.innerHTML = '<div class="alert alert-danger">Error al cargar tus reservas.</div>';
+    contenedor.innerHTML =
+      '<div class="alert alert-danger">Error al cargar tus reservas.</div>';
   }
 });
 
@@ -363,44 +411,48 @@ document.addEventListener('click', async (e) => {
     const id = e.target.dataset.id;
     if (!id) return;
     const btn = e.target;
-    btn.disabled = true; btn.textContent = 'Enviando...';
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
     try {
-const res = await fetch(apiUrl(`/reservas/${id}/reenviar`), {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' }
-});
+      const res = await fetch(apiUrl(`/reservas/${id}/reenviar`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
       const data = await res.json();
-      alert(data.mensaje || data.error || 'Correo reenviado correctamente.');
+      alert(
+        data.mensaje || data.error || 'Correo reenviado correctamente.'
+      );
     } catch {
       alert('❌ Error al reenviar correo.');
     } finally {
-      btn.disabled = false; btn.textContent = '🔁 Reenviar correo';
+      btn.disabled = false;
+      btn.textContent = '🔁 Reenviar correo';
     }
   }
-// Cancelar reserva pendiente
-if (e.target.classList.contains('btn-cancelar-pendiente')) {
-  const id = e.target.dataset.id;
-  if (!id) return;
 
-  if (!confirm('¿Seguro querés cancelar esta reserva pendiente?')) return;
+  // Cancelar reserva pendiente
+  if (e.target.classList.contains('btn-cancelar-pendiente')) {
+    const id = e.target.dataset.id;
+    if (!id) return;
 
-  try {
-const res = await fetch(apiUrl(`/reservas/${id}/cancelar`), {
-  method: 'PATCH'
-});
+    if (!confirm('¿Seguro querés cancelar esta reserva pendiente?')) return;
 
-    const data = await res.json();
-    if (res.ok) {
-      alert(data.mensaje);
-      location.reload();
-    } else {
-      alert(data.error || 'No se pudo cancelar la reserva.');
+    try {
+      const res = await fetch(apiUrl(`/reservas/${id}/cancelar`), {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.mensaje);
+        location.reload();
+      } else {
+        alert(data.error || 'No se pudo cancelar la reserva.');
+      }
+    } catch (err) {
+      alert('❌ Error al cancelar reserva pendiente.');
+      console.error(err);
     }
-  } catch (err) {
-    alert('❌ Error al cancelar reserva pendiente.');
-    console.error(err);
   }
-}
 
   // Cancelar (solo confirmadas)
   if (e.target.classList.contains('btn-cancelar')) {
@@ -408,11 +460,11 @@ const res = await fetch(apiUrl(`/reservas/${id}/cancelar`), {
     if (!id) return;
     if (!confirm('¿Seguro querés cancelar esta reserva?')) return;
     try {
-const res = await fetch(apiUrl(`/turnos/${id}/cancelar`), {
-  method: 'PATCH'
-});
+      const res = await fetch(apiUrl(`/turnos/${id}/cancelar`), {
+        method: 'PATCH',
+      });
       if (!res.ok) {
-        const data = await res.json().catch(()=>({}));
+        const data = await res.json().catch(() => ({}));
         alert(data?.error || 'No se pudo cancelar.');
         return;
       }
@@ -427,12 +479,13 @@ const res = await fetch(apiUrl(`/turnos/${id}/cancelar`), {
     const id = e.target.dataset.id;
     if (!id) return;
     const btn = e.target;
-    btn.disabled = true; btn.textContent = 'Generando...';
+    btn.disabled = true;
+    btn.textContent = 'Generando...';
     try {
-const r = await fetch(apiUrl(`/generar-link-pago/${id}`), {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' }
-});
+      const r = await fetch(apiUrl(`/generar-link-pago/${id}`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
       const data = await r.json();
       if (!r.ok || !data.pagoUrl) {
         alert(data.error || 'No se pudo generar el link de pago.');
@@ -443,7 +496,8 @@ const r = await fetch(apiUrl(`/generar-link-pago/${id}`), {
     } catch {
       alert('❌ Error generando link de pago.');
     } finally {
-      btn.disabled = false; btn.textContent = 'Pagar online';
+      btn.disabled = false;
+      btn.textContent = 'Pagar online';
     }
   }
 });
