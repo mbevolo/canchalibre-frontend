@@ -2,9 +2,12 @@
 //  BASE de API (evita duplicados)
 // ============================
 if (!window.__AUTH_BASE__) {
-  // Cambiá window.APP_BASE_URL en el HTML si tu API no está en 192.168.1.106:3000
-  window.__AUTH_BASE__ = (window.APP_BASE_URL && String(window.APP_BASE_URL)) || 'https://turnolibre-backend.onrender.com';
+  // En producción, la API vive en api.canchalibre.ar
+  window.__AUTH_BASE__ =
+    (window.APP_BASE_URL && String(window.APP_BASE_URL)) ||
+    'https://api.canchalibre.ar';
 }
+
 function apiUrl(path) {
   const base = window.__AUTH_BASE__.replace(/\/+$/, '');
   const p = String(path || '').startsWith('/') ? path : `/${path || ''}`;
@@ -173,8 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const formUsuario = document.getElementById('form-usuario');
   if (formUsuario) {
     try {
-      const res = await fetch(`https://turnolibre-backend.onrender.com/usuario/${emailUsuario}`);
-      const usuario = await res.json();
+const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`));      const usuario = await res.json();
       document.getElementById('nombre').value = usuario.nombre || '';
       document.getElementById('apellido').value = usuario.apellido || '';
       document.getElementById('telefono').value = usuario.telefono || '';
@@ -192,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         telefono: document.getElementById('telefono').value.trim(),
       };
       try {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/usuario/${emailUsuario}`, {
+const res = await fetch(apiUrl(`/usuario/${encodeURIComponent(emailUsuario)}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(datos)
@@ -223,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    const res = await fetch(`https://turnolibre-backend.onrender.com/reservas-usuario/${email}`);
+const res = await fetch(apiUrl(`/reservas-usuario/${encodeURIComponent(email)}`));
     let reservas = await res.json();
 
     // 🔸 Separar pendientes (colección Reserva) de confirmadas (colección Turno)
@@ -363,7 +365,10 @@ document.addEventListener('click', async (e) => {
     const btn = e.target;
     btn.disabled = true; btn.textContent = 'Enviando...';
     try {
-      const res = await fetch(`https://turnolibre-backend.onrender.com/reservas/${id}/reenviar`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+const res = await fetch(apiUrl(`/reservas/${id}/reenviar`), {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' }
+});
       const data = await res.json();
       alert(data.mensaje || data.error || 'Correo reenviado correctamente.');
     } catch {
@@ -380,9 +385,10 @@ if (e.target.classList.contains('btn-cancelar-pendiente')) {
   if (!confirm('¿Seguro querés cancelar esta reserva pendiente?')) return;
 
   try {
-    const res = await fetch(`https://turnolibre-backend.onrender.com/reservas/${id}/cancelar`, {
-      method: 'PATCH'
-    });
+const res = await fetch(apiUrl(`/reservas/${id}/cancelar`), {
+  method: 'PATCH'
+});
+
     const data = await res.json();
     if (res.ok) {
       alert(data.mensaje);
@@ -402,7 +408,9 @@ if (e.target.classList.contains('btn-cancelar-pendiente')) {
     if (!id) return;
     if (!confirm('¿Seguro querés cancelar esta reserva?')) return;
     try {
-      const res = await fetch(`https://turnolibre-backend.onrender.com/turnos/${id}/cancelar`, { method: 'PATCH' });
+const res = await fetch(apiUrl(`/turnos/${id}/cancelar`), {
+  method: 'PATCH'
+});
       if (!res.ok) {
         const data = await res.json().catch(()=>({}));
         alert(data?.error || 'No se pudo cancelar.');
@@ -421,7 +429,10 @@ if (e.target.classList.contains('btn-cancelar-pendiente')) {
     const btn = e.target;
     btn.disabled = true; btn.textContent = 'Generando...';
     try {
-      const r = await fetch(`https://turnolibre-backend.onrender.com/generar-link-pago/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+const r = await fetch(apiUrl(`/generar-link-pago/${id}`), {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' }
+});
       const data = await r.json();
       if (!r.ok || !data.pagoUrl) {
         alert(data.error || 'No se pudo generar el link de pago.');
