@@ -6,10 +6,9 @@
   <title>Verificando cuenta...</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-
 <body class="bg-light d-flex justify-content-center align-items-center vh-100">
 
-  <div id="msg" class="text-center">
+  <div id="estado" class="text-center">
     <div class="spinner-border text-primary mb-3" role="status">
       <span class="visually-hidden">Verificando...</span>
     </div>
@@ -17,47 +16,33 @@
     <p>Por favor esperá un momento.</p>
   </div>
 
-<script>
-window.onload = async () => {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-  const tipo = params.get("tipo") || "usuario"; // default
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const tipo  = params.get('tipo'); // "usuario" o "club"
 
-  if (!token) {
-    document.getElementById("msg").innerHTML = `
-      <h3 class="text-danger">Enlace inválido.</h3>
-      <p>Falta el token.</p>
-      <a href="login.html" class="btn btn-primary mt-3">Volver al inicio</a>
-    `;
-    return;
-  }
+      const contenedor = document.getElementById('estado');
 
-  try {
-    // 🔥 LLAMAR AL BACKEND REAL
-    const url = `https://api.canchalibre.ar/verificar-email?token=${token}&tipo=${tipo}`;
-    const res = await fetch(url, { redirect: "follow" });
+      // Si falta info en la URL, mostramos error
+      if (!token || !tipo) {
+        contenedor.innerHTML = `
+          <h3 class="text-danger">Enlace inválido.</h3>
+          <p>El token de verificación no es válido o falta información.</p>
+          <a href="login.html" class="btn btn-primary mt-3">Volver al inicio</a>
+        `;
+        return;
+      }
 
-    if (res.redirected) {
-      window.location.href = res.url;
-      return;
-    }
+      // ✅ NADA DE fetch / AJAX
+      // Navegamos directamente al backend, que ya hace el redirect al login
+      window.location.href =
+        'https://api.canchalibre.ar/verificar-email'
+        + '?token=' + encodeURIComponent(token)
+        + '&tipo='  + encodeURIComponent(tipo);
+    })();
+  </script>
 
-    const txt = await res.text();
-    document.getElementById("msg").innerHTML = `
-      <h3 class="text-danger">Error en verificación</h3>
-      <p>${txt}</p>
-      <a href="login.html" class="btn btn-primary mt-3">Volver al inicio</a>
-    `;
-
-  } catch (err) {
-    document.getElementById("msg").innerHTML = `
-      <h3 class="text-danger">Error inesperado.</h3>
-      <p>No se pudo verificar tu email.</p>
-      <a href="login.html" class="btn btn-primary mt-3">Volver al inicio</a>
-    `;
-  }
-};
-</script>
-
+  <script src="js/footer.js"></script>
 </body>
 </html>
