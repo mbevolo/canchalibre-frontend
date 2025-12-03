@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CanchaLibre - Detalle del Turno</title>
     <link rel="stylesheet" href="css/style.css">
-   
-
 </head>
 <body>
 
@@ -19,28 +17,34 @@
         <section class="detalle-turno">
             <h2>Detalle del Turno</h2>
 
+            <!-- 🟦 Botón para volver al buscador -->
+            <button onclick="window.location.href='index.html'" 
+                    style="margin-bottom: 15px;" 
+                    class="btn btn-secondary">
+                ← Volver al buscador
+            </button>
+
             <div id="detalle">
                 <!-- Se cargan los datos del turno -->
             </div>
 
-       <label for="metodo-pago" style="margin-top: 15px;">¿Cómo querés pagar?</label>
-<select id="metodo-pago" class="form-select" required>
-  <option value="efectivo">En efectivo en el club</option>
-  <option value="online">Online con MercadoPago</option>
-</select>
-<p class="text-muted">Si elegís online, te llevamos a MercadoPago para pagar con tarjeta o saldo.</p>
+            <label for="metodo-pago" style="margin-top: 15px;">¿Cómo querés pagar?</label>
+            <select id="metodo-pago" class="form-select" required>
+                <option value="efectivo">En efectivo en el club</option>
+                <option value="online">Online con MercadoPago</option>
+            </select>
+            <p class="text-muted">Si elegís online, te llevamos a MercadoPago para pagar con tarjeta o saldo.</p>
 
-<button id="confirmar-reserva">Confirmar y Reservar</button>
+            <button id="confirmar-reserva">Confirmar y Reservar</button>
 
-<div id="link-invitacion" style="margin-top:20px;"></div>
-<div id="link-pago" style="margin-top:20px;"></div>
+            <div id="link-invitacion" style="margin-top:20px;"></div>
+            <div id="link-pago" style="margin-top:20px;"></div>
 
         </section>
     </main>
 
     <script src="js/app.js"></script>
-<script src="js/footer.js"></script>
+    <script src="js/footer.js"></script>
 
 </body>
 </html>
-
