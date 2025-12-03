@@ -246,21 +246,31 @@ button:hover, .btn:hover {
   font-size: 0.85rem;
   margin-top: 3px;
 }
-/* ===== Panel del club: grilla de agendas ===== */
-#agendas-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-  gap: 24px;
+/* ===== Panel del club: Agenda ===== */
+
+/* Contenedor general de la agenda */
+#agendaTab .container-fluid {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Cada calendario dentro de la agenda (por cancha) */
-[id^="calendar-"] {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-height: 500px !important;
+/* Dentro de la agenda: layout en una sola columna */
+#agendas-container {
+  margin-top: 1rem;
+}
+
+/* Selector de cancha más compacto, alineado a la izquierda */
+#select-cancha-agenda {
+  max-width: 280px;
+}
+
+/* Calendario único: que ocupe todo el ancho disponible */
+#calendar-unico {
+  width: 100%;
+  max-width: 100%;
+  min-height: 500px;
   background: #ffffff;
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
-
