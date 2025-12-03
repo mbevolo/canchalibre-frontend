@@ -365,14 +365,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function cargarAgendas() {
-        const agendasContainer = document.getElementById('agendas-container');
-        agendasContainer.innerHTML = `
-            <label for="select-cancha-agenda" class="form-label mt-2 mb-1">Seleccioná la cancha:</label>
-            <select id="select-cancha-agenda" class="form-select mb-3"></select>
-            <div id="calendar-unico"></div>
-        `;
-        const selectCancha = document.getElementById('select-cancha-agenda');
+async function cargarAgendas() {
+    const agendasContainer = document.getElementById('agendas-container');
+    agendasContainer.innerHTML = `
+        <div id="calendar-unico"></div>
+    `;
+
+    const selectCancha = document.getElementById('select-cancha-agenda');
+    if (!selectCancha) return;   // por las dudas
+
+    // 🔹 Vaciar el select para que no duplique opciones al volver a la pestaña
+    selectCancha.innerHTML = '';
+
 
         // Trae todas las canchas y carga el select
         const resCanchas = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);

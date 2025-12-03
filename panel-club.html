@@ -96,10 +96,19 @@
   </div>
 
 <div class="tab-pane fade" id="agendaTab" role="tabpanel" aria-labelledby="agenda-tab">
-  <div class="container-fluid px-0">
-    <div id="agendas-container"></div>
-  </div>
+    <div class="container-fluid px-3">
+        
+        <!-- SELECTOR DE CANCHA AFUERA DEL CONTENEDOR DE LA AGENDA -->
+        <div id="selector-cancha-wrapper" class="mb-3">
+            <label for="select-cancha-agenda" class="form-label">Seleccioná la cancha:</label>
+            <select id="select-cancha-agenda" class="form-select" style="max-width:280px;"></select>
+        </div>
+
+        <!-- ACA VA LA AGENDA -->
+        <div id="agendas-container"></div>
+    </div>
 </div>
+
 
   <div class="tab-pane fade" id="reservasTab" role="tabpanel" aria-labelledby="reservas-tab">
     <ul class="nav nav-tabs mb-2" id="subTabsReservas" role="tablist">
