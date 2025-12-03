@@ -246,3 +246,18 @@ button:hover, .btn:hover {
   font-size: 0.85rem;
   margin-top: 3px;
 }
+/* ===== Panel del club: grilla de agendas ===== */
+#agendas-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 24px;
+}
+
+/* Cada calendario dentro de la agenda (por cancha) */
+[id^="calendar-"] {
+  min-height: 500px !important;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
