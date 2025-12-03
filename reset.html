@@ -56,7 +56,7 @@
 
       try {
         const endpoint = tipo === 'club' ? '/reset-club' : '/reset';
-        const res = await fetch('https://turnolibre-backend.onrender.com' + endpoint, {
+        const res = await fetch('https://api.canchalibre.ar' + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, nuevaPassword })

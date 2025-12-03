@@ -47,7 +47,7 @@
 
       try {
         const endpoint = email.includes('club') ? '/recuperar-club' : '/recuperar'; // opcional: según correo
-        const res = await fetch('https://turnolibre-backend.onrender.com' + endpoint, {
+        const res = await fetch('https://api.canchalibre.ar' + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

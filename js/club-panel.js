@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modal = new bootstrap.Modal(document.getElementById('modalCancha'));
 
     async function cargarInfoClub() {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
         const club = await res.json();
         document.getElementById('infoClubContent').innerHTML = `
             <p><strong>Nombre:</strong> ${club.nombre}</p>
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function cargarCanchas() {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
         const canchas = await res.json();
         const list = document.getElementById('canchasList');
         list.innerHTML = '';
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.eliminarCancha = async (id) => {
         if (confirm('¿Estás seguro de eliminar esta cancha?')) {
-            await fetch(`https://turnolibre-backend.onrender.com/canchas/${id}`, { method: 'DELETE' });
+            await fetch(`https://api.canchalibre.ar/canchas/${id}`, { method: 'DELETE' });
             cargarCanchas();
         }
     };
@@ -67,13 +67,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const body = { nombre, deporte, precio, clubEmail };
 
         if (id) {
-            await fetch(`https://turnolibre-backend.onrender.com/canchas/${id}`, {
+            await fetch(`https://api.canchalibre.ar/canchas/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
         } else {
-            await fetch('https://turnolibre-backend.onrender.com/canchas', {
+            await fetch('https://api.canchalibre.ar/canchas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)

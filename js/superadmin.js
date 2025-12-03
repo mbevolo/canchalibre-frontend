@@ -70,7 +70,7 @@ async function cargarClubes() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/clubes', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/clubes', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -125,7 +125,7 @@ async function cargarClubes() {
         const email = document.querySelector(`.club-email[data-id="${id}"]`).value;
         const telefono = document.querySelector(`.club-telefono[data-id="${id}"]`).value;
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/clubes/${id}`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/clubes/${id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ async function cargarClubes() {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/clubes/${id}/suspender`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/clubes/${id}/suspender`, {
             method: 'PATCH',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -174,7 +174,7 @@ async function cargarClubes() {
         if (!confirm('¿Seguro que querés eliminar este club? Esta acción no se puede deshacer.')) return;
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/clubes/${id}`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/clubes/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -202,7 +202,7 @@ async function cargarClubes() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/usuarios', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/usuarios', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -260,7 +260,7 @@ async function cargarClubes() {
         const email = document.querySelector(`.usuario-email[data-id="${id}"]`).value;
         const telefono = document.querySelector(`.usuario-telefono[data-id="${id}"]`).value;
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/usuarios/${id}`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/usuarios/${id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -286,7 +286,7 @@ async function cargarClubes() {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/usuarios/${id}/suspender`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/usuarios/${id}/suspender`, {
             method: 'PATCH',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -309,7 +309,7 @@ async function cargarClubes() {
         if (!confirm('¿Seguro que querés eliminar este usuario? Esta acción no se puede deshacer.')) return;
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/usuarios/${id}`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/usuarios/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -335,7 +335,7 @@ async function cargarClubes() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/reservas', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/reservas', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -402,7 +402,7 @@ async function cargarClubes() {
         const usuarioReservado = document.querySelector(`.reserva-usuario[data-id="${id}"]`).value;
         const emailReservado = document.querySelector(`.reserva-email[data-id="${id}"]`).value;
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/reservas/${id}`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/reservas/${id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -428,7 +428,7 @@ async function cargarClubes() {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/reservas/${id}/pagado`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/reservas/${id}/pagado`, {
             method: 'PATCH',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -451,7 +451,7 @@ async function cargarClubes() {
         if (!confirm('¿Seguro que querés cancelar esta reserva?')) return;
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://turnolibre-backend.onrender.com/superadmin/reservas/${id}/cancelar`, {
+          const res = await fetch(`https://api.canchalibre.ar/superadmin/reservas/${id}/cancelar`, {
             method: 'PATCH',
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -477,7 +477,7 @@ async function cargarPagos() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/pagos', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/pagos', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -531,7 +531,7 @@ async function cargarDestacados() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/destacados', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/destacados', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -576,7 +576,7 @@ async function cargarDestacados() {
         if (!confirm('¿Seguro que querés quitar el destacado a este club?')) return;
         const email = btn.getAttribute('data-email');
         try {
-          const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/quitar-destacado', {
+          const res = await fetch('https://api.canchalibre.ar/superadmin/quitar-destacado', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -605,7 +605,7 @@ async function cargarConfiguraciones() {
   const content = document.getElementById('superadmin-content');
   const token = localStorage.getItem('superadminToken');
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/configuraciones', {
+    const res = await fetch('https://api.canchalibre.ar/superadmin/configuraciones', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
@@ -636,7 +636,7 @@ async function cargarConfiguraciones() {
       const alerta = document.getElementById('config-alerta');
 
       try {
-        const res = await fetch('https://turnolibre-backend.onrender.com/superadmin/configuraciones', {
+        const res = await fetch('https://api.canchalibre.ar/superadmin/configuraciones', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

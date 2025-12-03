@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function cargarCanchas() {
         canchasList.innerHTML = '';
-        const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
         const canchas = await res.json();
         canchas.forEach(c => {
             const item = document.createElement('div');
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <button class="btn btn-sm btn-danger" data-id="${c._id}">Eliminar</button>
             `;
             item.querySelector('button').addEventListener('click', async () => {
-                await fetch(`https://turnolibre-backend.onrender.com/canchas/${c._id}`, { method: 'DELETE' });
+                await fetch(`https://api.canchalibre.ar/canchas/${c._id}`, { method: 'DELETE' });
                 cargarCanchas();
             });
             canchasList.appendChild(item);
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const precio = document.getElementById('precio-cancha').value;
         const horario = document.getElementById('horario-cancha').value;
 
-        await fetch('https://turnolibre-backend.onrender.com/canchas', {
+        await fetch('https://api.canchalibre.ar/canchas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, deporte, precio, horario, clubEmail })

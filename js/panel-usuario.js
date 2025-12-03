@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function cargarDatosUsuario() {
         try {
-            const res = await fetch(`https://turnolibre-backend.onrender.com/usuario/${emailUsuario}`);
+            const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`);
             const usuario = await res.json();
 
             document.getElementById('nombre').value = usuario.nombre || '';
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function cargarReservas() {
         try {
-            const res = await fetch(`https://turnolibre-backend.onrender.com/reservas-usuario/${emailUsuario}`);
+            const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
             const reservas = await res.json();
 
             const contenedor = document.getElementById('reservas-container');
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const id = btn.getAttribute('data-id');
                     const confirmar = confirm('¿Estás seguro de cancelar esta reserva?');
                     if (confirmar) {
-                        await fetch(`https://turnolibre-backend.onrender.com/turnos/${id}/cancelar`, { method: 'PATCH' });
+                        await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
                         alert('Reserva cancelada');
                         cargarReservas();
                     }
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.addEventListener('click', async () => {
                     const id = btn.getAttribute('data-id');
                     try {
-                        const res = await fetch(`https://turnolibre-backend.onrender.com/generar-link-pago/${id}`, {
+                        const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${id}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                         });
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-            const res = await fetch(`https://turnolibre-backend.onrender.com/usuario/${emailUsuario}`, {
+            const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 if (btnVerPasadas) {
   btnVerPasadas.addEventListener('click', async () => {
     try {
-      const res = await fetch(`https://turnolibre-backend.onrender.com/reservas-usuario/${emailUsuario}`);
+      const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
       const reservas = await res.json();
       const contenedor = document.getElementById('reservas-container');
       contenedor.innerHTML = '';

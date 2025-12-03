@@ -69,7 +69,7 @@
       localidadSelect.disabled = true;
 
       try {
-        const res = await fetch('https://turnolibre-backend.onrender.com/ubicaciones');
+        const res = await fetch('https://api.canchalibre.ar/ubicaciones');
         const data = await res.json();
 
         provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
@@ -106,7 +106,7 @@
 
     async function cargarDatosClub() {
       try {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
         clubData = await res.json();
 
         document.getElementById('nombreClub').value = clubData.nombre || '';
@@ -168,7 +168,7 @@
       };
 
       try {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubData._id}`, {
+        const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -188,7 +188,7 @@
       const token = document.getElementById('input-access-token').value.trim();
       if (!token) return alert('Debes ingresar el Access Token');
 
-      const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubData._id}/access-token`, {
+      const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}/access-token`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessToken: token })

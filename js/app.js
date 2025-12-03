@@ -42,7 +42,7 @@ function normalizarTexto(texto) {
 
 async function obtenerClubes() {
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/clubes');
+    const res = await fetch('https://api.canchalibre.ar/clubes');
     if (!res.ok) throw new Error('Respuesta no OK al obtener clubes');
     return await res.json();
   } catch (e) {
@@ -72,7 +72,7 @@ async function cargarUbicaciones() {
   if (!provinciaSelect || !localidadSelect) return; // la página no tiene filtros de ubicación
 
   try {
-    const res = await fetch('https://turnolibre-backend.onrender.com/ubicaciones');
+    const res = await fetch('https://api.canchalibre.ar/ubicaciones');
     const data = await res.json();
 
     provinciaSelect.innerHTML = '<option value="">Todas</option>';
@@ -131,7 +131,7 @@ async function cargarClubs(provincia, localidad) {
 
   try {
     const res = await fetch(
-      `https://turnolibre-backend.onrender.com/clubes?provincia=${encodeURIComponent(provincia || '')}&localidad=${encodeURIComponent(localidad)}`
+      `https://api.canchalibre.ar/clubes?provincia=${encodeURIComponent(provincia || '')}&localidad=${encodeURIComponent(localidad)}`
     );
     if (!res.ok) throw new Error('Respuesta no OK al obtener clubes');
     const data = await res.json();
@@ -472,7 +472,7 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
       try {
         // Trae turnos (con provincia/localidad como filtros de backend)
         const respuesta = await fetch(
-          `https://turnolibre-backend.onrender.com/turnos-generados?fecha=${encodeURIComponent(fechaSeleccionada)}&provincia=${encodeURIComponent(provinciaSeleccionada)}&localidad=${encodeURIComponent(localidadSeleccionada)}&club=${encodeURIComponent(clubSeleccionado)}`
+          `https://api.canchalibre.ar/turnos-generados?fecha=${encodeURIComponent(fechaSeleccionada)}&provincia=${encodeURIComponent(provinciaSeleccionada)}&localidad=${encodeURIComponent(localidadSeleccionada)}&club=${encodeURIComponent(clubSeleccionado)}`
         );
 
         if (!respuesta.ok) throw new Error('Respuesta no OK al obtener turnos');
@@ -554,7 +554,7 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
     const detalleDiv = document.getElementById('detalle');
     if (!detalleDiv) return;
 
-    fetch(`https://turnolibre-backend.onrender.com/club/${encodeURIComponent(turnoGuardado.club)}`)
+    fetch(`https://api.canchalibre.ar/club/${encodeURIComponent(turnoGuardado.club)}`)
       .then((res) => res.json())
       .then((club) => {
         detalleDiv.innerHTML = `
@@ -605,7 +605,7 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
 
 // 🆕 NUEVO FLUJO: reserva pendiente con confirmación por email
 try {
-  const respuesta = await fetch('https://turnolibre-backend.onrender.com/reservas/hold', {
+  const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

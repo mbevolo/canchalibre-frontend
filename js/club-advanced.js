@@ -5,7 +5,7 @@ let DIAS_DESTACADO = 30;
 // Función global para cargar valores desde el backend
 async function cargarConfigDestacado() {
     try {
-        const res = await fetch('https://turnolibre-backend.onrender.com/configuracion-destacado');
+        const res = await fetch('https://api.canchalibre.ar/configuracion-destacado');
         const data = await res.json();
         PRECIO_DESTACADO = data.precioDestacado;
         DIAS_DESTACADO = data.diasDestacado;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     try {
-        const resClub = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}`);
+        const resClub = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
         clubData = await resClub.json();
         // console.log('📦 Datos del club cargados:', clubData);
 
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     btn.disabled = true;
                     btn.textContent = "Generando link...";
                     try {
-                        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}/destacar-pago`, {
+                        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/destacar-pago`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                         });
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.disabled = true;
                 btn.textContent = "Generando link...";
                 try {
-                    const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}/destacar-pago`, {
+                    const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/destacar-pago`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
                     });
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       let marker;
       try {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
         if (!res.ok) throw new Error('Error al cargar club');
         const club = await res.json();
 
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnGuardarToken.addEventListener('click', async () => {
         const token = document.getElementById('input-access-token').value.trim();
         if (!token) return alert('Debes ingresar el Access Token');
-        const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubEmail}/access-token`, {
+        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/access-token`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ accessToken: token })
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function cargarCanchas() {
         canchasList.innerHTML = '';
-        const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
         if (!res.ok) throw new Error('Error al cargar canchas');
         const canchas = await res.json();
 
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function cargarEventosSemana(canchaId, fechaInicioSemana) {
       
         const fechaParam = (fechaInicioSemana || '').split('T')[0];
-        const res = await fetch(`https://turnolibre-backend.onrender.com/turnos-generados?fecha=${fechaParam}`);
+        const res = await fetch(`https://api.canchalibre.ar/turnos-generados?fecha=${fechaParam}`);
         const turnos = await res.json();
         const canchaTurnos = turnos.filter(t => t.canchaId?.toString() === canchaId.toString());
         // console.log(`🎾 Turnos encontrados para cancha ${canchaId}:`, canchaTurnos.length);
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const selectCancha = document.getElementById('select-cancha-agenda');
 
         // Trae todas las canchas y carga el select
-        const resCanchas = await fetch(`https://turnolibre-backend.onrender.com/canchas/${clubEmail}`);
+        const resCanchas = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
         const canchas = await resCanchas.json();
 
         if (!canchas || canchas.length === 0) {
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (btnPago) {
                             btnPago.onclick = async () => {
                                 try {
-                                    const res = await fetch(`https://turnolibre-backend.onrender.com/generar-link-pago/${turno.realId}`, {
+                                    const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${turno.realId}`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' }
                                     });
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         return;
                                     }
                                     // Obtener reserva con teléfono
-                                    const resReserva = await fetch(`https://turnolibre-backend.onrender.com/reserva/${turno.realId}`);
+                                    const resReserva = await fetch(`https://api.canchalibre.ar/reserva/${turno.realId}`);
                                     const reserva = await resReserva.json();
                                     let telefonoOriginal = reserva.usuarioId?.telefono || '';
                                     let telefono = telefonoOriginal.replace(/[^0-9]/g, '');
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 const confirmar = confirm('¿Confirmás que el usuario pagó en efectivo u otro medio?');
                                 if (confirmar) {
                                     try {
-                                        const res = await fetch(`https://turnolibre-backend.onrender.com/turnos/${turno.realId}/marcar-pagado`, {
+                                        const res = await fetch(`https://api.canchalibre.ar/turnos/${turno.realId}/marcar-pagado`, {
                                             method: 'PATCH',
                                             headers: { 'Content-Type': 'application/json' }
                                         });
@@ -640,14 +640,14 @@ document.getElementById('guardar-cancha').addEventListener('click', async () => 
     };
 
     if (editandoCanchaId) {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${editandoCanchaId}`, {
+        const res = await fetch(`https://api.canchalibre.ar/canchas/${editandoCanchaId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(canchaData)
         });
         if (!res.ok) throw new Error('Error al actualizar cancha');
     } else {
-        await fetch('https://turnolibre-backend.onrender.com/canchas', {
+        await fetch('https://api.canchalibre.ar/canchas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(canchaData)
@@ -661,7 +661,7 @@ document.getElementById('guardar-cancha').addEventListener('click', async () => 
 
     // Editar cancha
     window.editarCancha = async function (id) {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${clubEmail}`);
+        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
         if (!res.ok) throw new Error('Error al cargar canchas');
         const canchas = await res.json();
 
@@ -739,7 +739,7 @@ document.getElementById('guardar-cancha').addEventListener('click', async () => 
     // Eliminar cancha
     window.eliminarCancha = async function (id) {
         try {
-            const res = await fetch(`https://turnolibre-backend.onrender.com/canchas/${id}`, { method: 'DELETE' });
+            const res = await fetch(`https://api.canchalibre.ar/canchas/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Error al eliminar cancha');
             await cargarCanchas();
         } catch (error) {
@@ -752,7 +752,7 @@ document.getElementById('guardar-cancha').addEventListener('click', async () => 
         if (turnoSeleccionado && turnoSeleccionado.realId) {
             const confirmar = confirm('¿Estás seguro de que querés cancelar este turno?');
             if (confirmar) {
-                const res = await fetch(`https://turnolibre-backend.onrender.com/turnos/${turnoSeleccionado.realId}/cancelar`, { method: 'PATCH' });
+                const res = await fetch(`https://api.canchalibre.ar/turnos/${turnoSeleccionado.realId}/cancelar`, { method: 'PATCH' });
                 if (!res.ok) throw new Error('Error al cancelar turno');
                 modalTurno.hide();
               
@@ -785,7 +785,7 @@ console.log('📤 Enviando reserva:', {
   canchaId: turnoSeleccionado.canchaId
 });
 
-const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno', {
+const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -818,7 +818,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
       reservasList.innerHTML = '';
       if (historialList) historialList.innerHTML = '';
 
-      const res = await fetch(`https://turnolibre-backend.onrender.com/reservas/${clubEmail}`);
+      const res = await fetch(`https://api.canchalibre.ar/reservas/${clubEmail}`);
       const reservas = await res.json();
 
       // ---- SEPARAR RESERVAS FUTURAS Y PASADAS ----
@@ -915,7 +915,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
               const id = btn.getAttribute('data-id');
               const confirmar = confirm('¿Estás seguro de que querés cancelar esta reserva?');
               if (confirmar) {
-                  await fetch(`https://turnolibre-backend.onrender.com/turnos/${id}/cancelar`, { method: 'PATCH' });
+                  await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
                   await cargarReservas();
               }
           });
@@ -924,7 +924,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
           btn.addEventListener('click', async () => {
               const id = btn.getAttribute('data-id');
               try {
-                  const res = await fetch(`https://turnolibre-backend.onrender.com/generar-link-pago/${id}`, {
+                  const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${id}`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' }
                   });
@@ -933,7 +933,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
                       alert(data.error || 'No se pudo generar el link de pago.');
                       return;
                   }
-                  const resReserva = await fetch(`https://turnolibre-backend.onrender.com/reserva/${id}`);
+                  const resReserva = await fetch(`https://api.canchalibre.ar/reserva/${id}`);
                   const reserva = await resReserva.json();
                   let telefonoOriginal = reserva.usuarioId?.telefono || '';
                   let telefono = telefonoOriginal.replace(/[^0-9]/g, '');
@@ -977,7 +977,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
               const confirmar = confirm('¿Confirmás que el usuario pagó en efectivo u otro medio?');
               if (confirmar) {
                   try {
-                      const res = await fetch(`https://turnolibre-backend.onrender.com/turnos/${id}/marcar-pagado`, {
+                      const res = await fetch(`https://api.canchalibre.ar/turnos/${id}/marcar-pagado`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' }
                       });
@@ -1019,7 +1019,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
         localidadSelect.disabled = true;
 
         try {
-            const res = await fetch('https://turnolibre-backend.onrender.com/ubicaciones');
+            const res = await fetch('https://api.canchalibre.ar/ubicaciones');
             const data = await res.json();
 
             provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
@@ -1071,7 +1071,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
             const body = { nombre, telefono, provincia, localidad };
 
             try {
-                const res = await fetch(`https://turnolibre-backend.onrender.com/club/${clubData._id}`, {
+                const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
@@ -1103,7 +1103,7 @@ const res = await fetch('https://turnolibre-backend.onrender.com/reservar-turno'
       contenedor.innerHTML = '';
 
       try {
-        const res = await fetch(`https://turnolibre-backend.onrender.com/reservas/${clubData.email}`);
+        const res = await fetch(`https://api.canchalibre.ar/reservas/${clubData.email}`);
         if (!res.ok) throw new Error('Error al obtener reservas');
         const reservas = await res.json();
 
