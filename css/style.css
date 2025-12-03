@@ -250,9 +250,11 @@ button:hover, .btn:hover {
 
 /* Contenedor general de la agenda */
 #agendaTab .container-fluid {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100% !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
 }
+
 
 /* Dentro de la agenda: layout en una sola columna */
 #agendas-container {
