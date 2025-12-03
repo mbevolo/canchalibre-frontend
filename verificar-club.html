@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificando cuenta...</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="resultado">Verificando...</div>
+
+  <script>
+    async function verificar() {
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get("email");
+      const token = params.get("token");
+
+      if (!email || !token) {
+        document.getElementById("resultado").innerHTML =
+          "❌ Enlace inválido.";
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${window.APP_BASE_URL}/verificar-club?email=${encodeURIComponent(email)}&token=${token}`
+        );
+
+        const data = await res.json();
+
+        if (data.ok) {
+          document.getElementById("resultado").innerHTML =
+            "<h2>Cuenta verificada ✔</h2><p>Ya podés iniciar sesión en tu panel del club.</p>";
+        } else {
+          document.getElementById("resultado").innerHTML =
+            "❌ " + (data.error || "No se pudo verificar la cuenta.");
+        }
+      } catch (e) {
+        document.getElementById("resultado").innerHTML =
+          "❌ Error al conectar con el servidor.";
+      }
+    }
+
+    verificar();
+  </script>
+</body>
+</html>
