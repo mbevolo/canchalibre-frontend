@@ -562,18 +562,6 @@ async function cargarAgendas() {
         await renderCalendario(canchas[0]._id);
     }
 
-    // Mostrar agendas al entrar en la pestaña
-    document.getElementById('agenda-tab').addEventListener('shown.bs.tab', async () => {
-        await cargarAgendas();
-        setTimeout(() => {
-            const calendarEl = document.getElementById('calendar-unico');
-            if (calendarEl && calendarEl._calendar) {
-                calendarEl._calendar.updateSize();
-                calendarEl._calendar.render();
-            }
-            window.dispatchEvent(new Event('resize'));
-        }, 200);
-    });
 
     await cargarCanchas();
 
@@ -1144,25 +1132,6 @@ div.innerHTML = `
       }
     }
 
-    // === ESCUCHADORES DE CAMBIO DE PESTAÑA ===
-    const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabs.forEach(tab => {
-      tab.addEventListener('shown.bs.tab', async event => {
-        const id = event.target.id;
-
-        if (id === 'agenda-tab') {
-          await cargarAgendas();
-        }
-
-        if (id === 'reservas-tab') {
-          await cargarReservas();
-        }
-
-        if (id === 'canchas-tab') {
-          await cargarCanchas();
-        }
-      });
-    });
 
     // === CARGA INICIAL SEGÚN PESTAÑA VISIBLE ===
     if (document.querySelector('#canchasTab').classList.contains('show')) {
