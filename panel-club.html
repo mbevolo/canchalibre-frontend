@@ -234,28 +234,6 @@
   });
 </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-  tabs.forEach(tab => {
-    tab.addEventListener('shown.bs.tab', async event => {
-      const id = event.target.id;
-
-      if (id === 'agenda-tab' && typeof cargarAgendas === 'function') {
-        await cargarAgendas();
-      }
-
-      if (id === 'reservas-tab' && typeof cargarReservas === 'function') {
-        await cargarReservas();
-      }
-
-      if (id === 'canchas-tab' && typeof cargarCanchas === 'function') {
-        await cargarCanchas();
-      }
-    });
-  });
-});
-</script>
 
 <script src="js/footer.js"></script>
 
