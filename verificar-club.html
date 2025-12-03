@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Verificando cuenta...</title>
+
+  <!-- 🔹 DEFINIR LA BASE DE LA API -->
+  <script>
+    // Usamos el mismo nombre y valor que en el resto del proyecto
+    window.API_BASE_URL = "https://api.canchalibre.ar";
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -41,7 +48,7 @@
 
       try {
         const res = await fetch(
-          `${window.APP_BASE_URL}/verificar-club?email=${encodeURIComponent(email)}&token=${token}`
+          `${window.API_BASE_URL}/verificar-club?email=${encodeURIComponent(email)}&token=${token}`
         );
 
         const data = await res.json();
