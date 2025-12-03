@@ -548,11 +548,10 @@ async function cargarAgendas() {
             });
             calendar.render();
             calendarEl._calendar = calendar;
-            await cargarEventosSemana(cancha._id.toString(), startDateStr);
+            
+calendar.updateSize();
+calendar.render();
 
-            setTimeout(() => {
-                calendar.updateSize();
-            }, 100);
         }
 
         selectCancha.onchange = async function () {
