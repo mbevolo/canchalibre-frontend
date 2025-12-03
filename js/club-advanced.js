@@ -1131,6 +1131,35 @@ div.innerHTML = `
         console.error(err);
       }
     }
+// === ESCUCHADORES DE CAMBIO DE PESTAÑA (únicos) ===
+const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+tabs.forEach(tab => {
+  tab.addEventListener('shown.bs.tab', async event => {
+    const id = event.target.id;
+
+    if (id === 'agenda-tab') {
+      await cargarAgendas();
+
+      // después de cargar, ajustar tamaño del calendario
+      setTimeout(() => {
+        const calendarEl = document.getElementById('calendar-unico');
+        if (calendarEl && calendarEl._calendar) {
+          calendarEl._calendar.updateSize();
+          calendarEl._calendar.render();
+        }
+        window.dispatchEvent(new Event('resize'));
+      }, 200);
+    }
+
+    if (id === 'reservas-tab') {
+      await cargarReservas();
+    }
+
+    if (id === 'canchas-tab') {
+      await cargarCanchas();
+    }
+  });
+});
 
 
     // === CARGA INICIAL SEGÚN PESTAÑA VISIBLE ===
