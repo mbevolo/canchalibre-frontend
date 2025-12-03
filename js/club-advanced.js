@@ -1150,11 +1150,7 @@ div.innerHTML = `
       tab.addEventListener('shown.bs.tab', async event => {
         const id = event.target.id;
 
-        if (id === 'agenda-tab') {
-          await cargarAgendas();
-        }
-
-        if (id === 'reservas-tab') {
+          if (id === 'reservas-tab') {
           await cargarReservas();
         }
 
@@ -1169,10 +1165,7 @@ div.innerHTML = `
       // console.log("📌 Carga inicial: canchas");
       await cargarCanchas();
     }
-    if (document.querySelector('#agendaTab').classList.contains('show')) {
-      //  console.log("📌 Carga inicial: agenda");
-      await cargarAgendas();
-    }
+
     if (document.querySelector('#reservasTab').classList.contains('show')) {
       //  console.log("📌 Carga inicial: reservas");
       await cargarReservas();
