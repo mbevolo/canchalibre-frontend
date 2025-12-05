@@ -882,43 +882,58 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
               botones += `<button class="btn btn-sm btn-primary marcar-pagada" data-id="${r._id}">Marcar como pagada</button>`;
           }
 
-const telefonoReserva =
-    r.usuarioId?.telefono ||
-    r.usuarioTelefono ||
-    r.usuario?.telefono ||
-    r.telefonoReservado ||
-    '';
+          // ✅ Buscamos el teléfono en todos los campos posibles
+          const telefonoReserva =
+              r.usuarioId?.telefono ||
+              r.usuarioTelefono ||
+              r.usuario?.telefono ||
+              r.telefonoReservado ||
+              '';
 
-const telefonoFormateado = formatearTelefono(telefonoReserva);
+          // ✅ Normalizamos solo si hay algo
+          const telefonoWa = telefonoReserva ? formatearTelefono(telefonoReserva) : '';
 
-const htmlTelefono = telefonoFormateado
-    ? `
-        📱 <a href="https://wa.me/${telefonoFormateado}" target="_blank" style="text-decoration: none;">
-              ${telefonoReserva}
-              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-                   alt="WhatsApp" style="width: 18px; vertical-align: middle; margin-left: 4px;">
-          </a>
-      `
-    : `
-        📱 ${telefonoReserva || ''}
-      `;
+          const iconoWhatsApp = `
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                 alt="WhatsApp"
+                 style="width: 18px; vertical-align: middle; margin-left: 4px;">
+          `;
 
-const row = document.createElement('tr');
-row.innerHTML = `
-    <td>${r.nombreCancha || 'Sin nombre'}</td>
-    <td>${fechaFormateada}</td>
-    <td>${r.hora}</td>
-    <td>
-        ${r.usuarioId?.nombre || ''} ${r.usuarioId?.apellido || ''}<br>
-        📧 ${r.usuarioId?.email || r.emailReservado}<br>
-        ${htmlTelefono}
-    </td>
-    <td>${estadoPago}</td>
-    <td>${botones}</td>
-`;
-reservasList.appendChild(row);
+          let htmlTelefono;
+          if (telefonoWa) {
+              // ✅ Hay teléfono → link clickeable a WhatsApp
+              htmlTelefono = `
+                📱 <a href="https://wa.me/${telefonoWa}" target="_blank" style="text-decoration: none;">
+                      ${telefonoReserva}
+                      ${iconoWhatsApp}
+                   </a>
+              `;
+          } else {
+              // ⚠️ No hay teléfono → icono gris y texto informativo
+              htmlTelefono = `
+                📱 <span title="No hay teléfono cargado" style="opacity: 0.6;">
+                      (sin teléfono)
+                      ${iconoWhatsApp}
+                   </span>
+              `;
+          }
 
+          const row = document.createElement('tr');
+          row.innerHTML = `
+              <td>${r.nombreCancha || 'Sin nombre'}</td>
+              <td>${fechaFormateada}</td>
+              <td>${r.hora}</td>
+              <td>
+                  ${r.usuarioId?.nombre || ''} ${r.usuarioId?.apellido || ''}<br>
+                  📧 ${r.usuarioId?.email || r.emailReservado}<br>
+                  ${htmlTelefono}
+              </td>
+              <td>${estadoPago}</td>
+              <td>${botones}</td>
+          `;
+          reservasList.appendChild(row);
       });
+
 
       // ---- MOSTRAR PASADAS EN historial-list ----
       if (historialList) {
