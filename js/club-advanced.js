@@ -882,10 +882,9 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
               botones += `<button class="btn btn-sm btn-primary marcar-pagada" data-id="${r._id}">Marcar como pagada</button>`;
           }
 
-          // ✅ Buscamos el teléfono en todos los campos posibles
-          const telefonoReserva = r.telefonoReservado ||              '';
+          // 👑 Teléfono oficial que viene de la API
+          const telefonoReserva = r.usuarioTelefono || '';
 
-          // ✅ Normalizamos solo si hay algo
           const telefonoWa = telefonoReserva ? formatearTelefono(telefonoReserva) : '';
 
           const iconoWhatsApp = `
@@ -896,7 +895,6 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
 
           let htmlTelefono;
           if (telefonoWa) {
-              // ✅ Hay teléfono → link clickeable a WhatsApp
               htmlTelefono = `
                 📱 <a href="https://wa.me/${telefonoWa}" target="_blank" style="text-decoration: none;">
                       ${telefonoReserva}
@@ -904,7 +902,6 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
                    </a>
               `;
           } else {
-              // ⚠️ No hay teléfono → icono gris y texto informativo
               htmlTelefono = `
                 📱 <span title="No hay teléfono cargado" style="opacity: 0.6;">
                       (sin teléfono)
@@ -919,8 +916,8 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
               <td>${fechaFormateada}</td>
               <td>${r.hora}</td>
               <td>
-                  ${r.usuarioId?.nombre || ''} ${r.usuarioId?.apellido || ''}<br>
-                  📧 ${r.usuarioId?.email || r.emailReservado}<br>
+                  ${r.usuarioNombre || ''} ${r.usuarioApellido || ''}<br>
+                  📧 ${r.usuarioEmail || r.emailReservado}<br>
                   ${htmlTelefono}
               </td>
               <td>${estadoPago}</td>
@@ -928,6 +925,7 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
           `;
           reservasList.appendChild(row);
       });
+
 
 
       // ---- MOSTRAR PASADAS EN historial-list ----
