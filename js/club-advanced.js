@@ -855,11 +855,19 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
 
       function formatearTelefono(tel) {
         if (!tel) return '';
-        let numero = tel.replace(/[^0-9]/g, '');
-        if (numero.startsWith('0')) numero = numero.slice(1);
-        if (!numero.startsWith('549')) numero = '549' + numero;
-        return numero;
+
+        // 1) Dejo solo dígitos
+        let numero = String(tel).replace(/[^0-9]/g, '');
+
+        // 2) Me quedo con los ÚLTIMOS 10 dígitos (número nacional sin 54 ni 9)
+        if (numero.length >= 10) {
+          numero = numero.slice(-10);
+        }
+
+        // 3) Armo siempre formato WhatsApp Argentina: 549 + número nacional
+        return '549' + numero;
       }
+
 
       futuras.forEach(r => {
           const [anio, mes, dia] = r.fecha.includes('-')
