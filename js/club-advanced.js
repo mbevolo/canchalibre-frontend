@@ -883,12 +883,7 @@ const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
           }
 
           // ✅ Buscamos el teléfono en todos los campos posibles
-          const telefonoReserva =
-              r.usuarioId?.telefono ||
-              r.usuarioTelefono ||
-              r.usuario?.telefono ||
-              r.telefonoReservado ||
-              '';
+          const telefonoReserva = r.telefonoReservado ||              '';
 
           // ✅ Normalizamos solo si hay algo
           const telefonoWa = telefonoReserva ? formatearTelefono(telefonoReserva) : '';
