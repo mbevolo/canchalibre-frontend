@@ -8,35 +8,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-<div id="barra-usuario" class="barra-usuario">
-    <span id="usuario-logueado"></span>
-    <a id="logout" class="logout-link" style="display:none;">Cerrar sesión</a>
-</div>
-
-<style>
-    .barra-usuario {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background-color: #f8f8f8;
-        font-size: 15px;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .logout-link {
-        color: #d9534f;               rojo suave */
-        text-decoration: none;
-        font-weight: 500;
-        cursor: pointer;
-    }
-
-    .logout-link:hover {
-        text-decoration: underline;
-        color: #00000000;
-    }
-</style>
-
+    <div id="barra-usuario" style="display: flex; justify-content: space-between; padding: 10px; background-color: #eee;">
+        <span id="usuario-logueado"></span>
+<a id="logout" class="logout-link" style="display:none;">Cerrar sesión</a>
+    </div>
 
     <header>
         <h1>
