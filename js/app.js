@@ -225,7 +225,7 @@ if (botonGPS) {
           reverseGeocode(pos.coords.latitude, pos.coords.longitude);
         },
         (err) => {
-
+              console.error("Error geolocalización", err);
         }
       );
     }
