@@ -8,10 +8,17 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-    <div id="barra-usuario" style="display: flex; justify-content: space-between; padding: 10px; background-color: #eee;">
+<div id="barra-usuario" class="barra-usuario">
+    <div class="usuario-linea">
         <span id="usuario-logueado"></span>
-<a id="logout" class="logout-link" style="display:none;">Cerrar sesión</a>
     </div>
+    <div class="usuario-opciones">
+        <a href="mi-cuenta.html" class="usuario-link">Mi cuenta</a>
+        <span class="separador">|</span>
+        <a id="logout" class="usuario-link" style="display:none;">Cerrar sesión</a>
+    </div>
+</div>
+
 
     <header>
         <h1>

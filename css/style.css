@@ -112,20 +112,49 @@ button:hover, .btn:hover {
 }
 
 /* ====== BARRA USUARIO ====== */
-#barra-usuario {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background-color: #eee;
+.barra-usuario {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #ddd;
+  font-size: 15px;
 }
 
-#logout {
-    background-color: #dc3545;
-    border: none;
+.usuario-linea {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-#logout:hover {
-    background-color: #c82333;
+.usuario-linea::before {
+  content: "👤";
+  font-size: 15px;
+}
+
+.usuario-opciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.usuario-link {
+  color: #000 !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.usuario-link:hover {
+  text-decoration: underline !important;
+}
+
+.separador {
+  color: #666;
 }
 
 /* ====== MAPA ====== */
@@ -276,3 +305,4 @@ button:hover, .btn:hover {
   padding: 1rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
+
