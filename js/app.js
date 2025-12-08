@@ -287,20 +287,17 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
 }
 
 
-  // --- Login/Logout + protección de vistas ---
+   // --- Login/Logout + protección de vistas ---
   const email = localStorage.getItem('usuarioLogueado');
   const spanUsuario = document.getElementById('usuario-logueado');
   const botonLogout = document.getElementById('logout');
 
   if (email) {
+    // Solo muestro el mail del usuario en la barra nueva
     if (spanUsuario) {
-      spanUsuario.textContent = `Sesión iniciada como: ${email}`;
-      const linkPanel = document.createElement('a');
-      linkPanel.href = 'panel-usuario.html';
-      linkPanel.textContent = 'Mi cuenta';
-      linkPanel.style.marginLeft = '10px';
-      spanUsuario.appendChild(linkPanel);
+      spanUsuario.textContent = email;
     }
+
     if (botonLogout) {
       botonLogout.style.display = 'inline';
       botonLogout.addEventListener('click', () => {
@@ -333,6 +330,7 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
       return; // evitamos seguir ejecutando en detalle.html sin login
     }
   }
+
 
   // --- Carga de provincias/localidades si corresponde ---
   cargarUbicaciones();
