@@ -8,11 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('info-usuario').textContent = `Estás logueado como: ${emailUsuario}`;
 
-    const btnCerrarSesion = document.getElementById('cerrar-sesion');
+const btnCerrarSesion = document.getElementById('cerrar-sesion');
+if (btnCerrarSesion) {
     btnCerrarSesion.addEventListener('click', () => {
         localStorage.removeItem('usuarioLogueado');
         window.location.href = 'login.html';
     });
+}
+
 
     async function cargarDatosUsuario() {
         try {
