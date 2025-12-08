@@ -67,8 +67,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const [anio, mes, dia] = r.fecha.split('-');
                 const fechaFormateada = `${dia}/${mes}/${anio}`;
                 const deporteCapitalizado = r.deporte
-  ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
-  : '(Pendiente de confirmación)';
+                    ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
+                    : '(Pendiente de confirmación)';
 
                 const estadoPago = r.pagado ? 'Pagado' : 'Pendiente';
 
@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('reservas-container').textContent = 'Error al cargar reservas.';
         }
     }
+
     // =============================
     // 🔧 Modo lectura / edición en "Mis datos"
     // =============================
@@ -168,6 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnEditar.addEventListener('click', modoEdicion);
     }
 
+    // ✅ Guardar cambios de usuario
     document.getElementById('form-usuario').addEventListener('submit', async (e) => {
         e.preventDefault();
         const datos = {
@@ -186,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await res.json();
             alert(result.mensaje || 'Datos actualizados correctamente.');
 
-            // ✅ Volver a modo solo lectura después de guardar
+            // 🔙 Volver a modo lectura después de guardar
             modoLectura();
         } catch (error) {
             console.error('Error al actualizar usuario:', error);
@@ -194,82 +196,79 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const btnVerPasadas = document.getElementById('ver-reservas-pasadas');
+    if (btnVerPasadas) {
+        btnVerPasadas.addEventListener('click', async () => {
+            try {
+                const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
+                const reservas = await res.json();
+                const contenedor = document.getElementById('reservas-container');
+                contenedor.innerHTML = '';
 
-   const btnVerPasadas = document.getElementById('ver-reservas-pasadas');
-if (btnVerPasadas) {
-  btnVerPasadas.addEventListener('click', async () => {
-    try {
-      const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
-      const reservas = await res.json();
-      const contenedor = document.getElementById('reservas-container');
-      contenedor.innerHTML = '';
+                const ahora = new Date();
+                const pasadas = reservas.filter(r => new Date(`${r.fecha}T${r.hora}`) < ahora);
 
-      const ahora = new Date();
-      const pasadas = reservas.filter(r => new Date(`${r.fecha}T${r.hora}`) < ahora);
+                if (pasadas.length === 0) {
+                    contenedor.textContent = 'No tenés reservas pasadas.';
+                } else {
+                    const tabla = document.createElement('table');
+                    tabla.classList.add('table', 'table-striped');
 
-      if (pasadas.length === 0) {
-        contenedor.textContent = 'No tenés reservas pasadas.';
-      } else {
-        const tabla = document.createElement('table');
-        tabla.classList.add('table', 'table-striped');
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = `
+                      <tr>
+                        <th>Club</th>
+                        <th>Deporte</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Estado</th>
+                      </tr>`;
+                    tabla.appendChild(thead);
 
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-          <tr>
-            <th>Club</th>
-            <th>Deporte</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Estado</th>
-          </tr>`;
-        tabla.appendChild(thead);
+                    const tbody = document.createElement('tbody');
+                    pasadas.forEach(r => {
+                        const [anio, mes, dia] = r.fecha.split('-');
+                        const fechaFormateada = `${dia}/${mes}/${anio}`;
+                        const deporteCapitalizado = r.deporte
+                            ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
+                            : '(Pendiente de confirmación)';
 
-        const tbody = document.createElement('tbody');
-        pasadas.forEach(r => {
-          const [anio, mes, dia] = r.fecha.split('-');
-          const fechaFormateada = `${dia}/${mes}/${anio}`;
-          const deporteCapitalizado = r.deporte
-  ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
-  : '(Pendiente de confirmación)';
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                          <td>${r.nombreClub || 'Club desconocido'}</td>
+                          <td>${deporteCapitalizado}</td>
+                          <td>${fechaFormateada}</td>
+                          <td>${r.hora}</td>
+                          <td>${r.pagado ? 'Pagado' : 'Pendiente'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
 
+                    tabla.appendChild(tbody);
+                    contenedor.appendChild(tabla);
+                }
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${r.nombreClub || 'Club desconocido'}</td>
-            <td>${deporteCapitalizado}</td>
-            <td>${fechaFormateada}</td>
-            <td>${r.hora}</td>
-            <td>${r.pagado ? 'Pagado' : 'Pendiente'}</td>
-          `;
-          tbody.appendChild(tr);
+                btnVerPasadas.style.display = 'none';
+                const btnVolver = document.createElement('button');
+                btnVolver.textContent = 'Ver reservas futuras';
+                btnVolver.className = 'btn btn-outline-primary btn-sm mt-2';
+                btnVerPasadas.parentElement.appendChild(btnVolver);
+
+                btnVolver.addEventListener('click', () => {
+                    btnVolver.remove();
+                    btnVerPasadas.style.display = 'inline-block';
+                    cargarReservas();
+                });
+
+            } catch (error) {
+                console.error('Error al cargar reservas pasadas:', error);
+                document.getElementById('reservas-container').textContent = 'Error al cargar reservas pasadas.';
+            }
         });
-
-        tabla.appendChild(tbody);
-        contenedor.appendChild(tabla);
-      }
-
-      btnVerPasadas.style.display = 'none';
-      const btnVolver = document.createElement('button');
-      btnVolver.textContent = 'Ver reservas futuras';
-      btnVolver.className = 'btn btn-outline-primary btn-sm mt-2';
-      btnVerPasadas.parentElement.appendChild(btnVolver);
-
-      btnVolver.addEventListener('click', () => {
-        btnVolver.remove();
-        btnVerPasadas.style.display = 'inline-block';
-        cargarReservas();
-      });
-
-    } catch (error) {
-      console.error('Error al cargar reservas pasadas:', error);
-      document.getElementById('reservas-container').textContent = 'Error al cargar reservas pasadas.';
     }
-  });
-}
 
-
+    // 🔚 Cargar datos iniciales y dejar todo en modo lectura
     await cargarReservas();
     await cargarDatosUsuario();
     modoLectura();
 });
-
