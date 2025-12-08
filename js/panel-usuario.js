@@ -133,6 +133,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('reservas-container').textContent = 'Error al cargar reservas.';
         }
     }
+    // =============================
+    // 🔧 Modo lectura / edición en "Mis datos"
+    // =============================
+    const camposUsuario = ['nombre', 'apellido', 'telefono']; // email no se edita
+    const btnEditar = document.getElementById('btn-editar');
+    const btnGuardar = document.getElementById('btn-guardar');
+
+    function modoLectura() {
+        camposUsuario.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) input.disabled = true;
+        });
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.disabled = true;
+
+        if (btnEditar) btnEditar.style.display = 'inline-block';
+        if (btnGuardar) btnGuardar.style.display = 'none';
+    }
+
+    function modoEdicion() {
+        camposUsuario.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) input.disabled = false;
+        });
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.disabled = true;
+
+        if (btnEditar) btnEditar.style.display = 'none';
+        if (btnGuardar) btnGuardar.style.display = 'inline-block';
+    }
+
+    if (btnEditar) {
+        btnEditar.addEventListener('click', modoEdicion);
+    }
 
     document.getElementById('form-usuario').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -151,11 +185,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const result = await res.json();
             alert(result.mensaje || 'Datos actualizados correctamente.');
+
+            // ✅ Volver a modo solo lectura después de guardar
+            modoLectura();
         } catch (error) {
             console.error('Error al actualizar usuario:', error);
             alert('Error al actualizar los datos.');
         }
     });
+
 
    const btnVerPasadas = document.getElementById('ver-reservas-pasadas');
 if (btnVerPasadas) {
@@ -230,6 +268,8 @@ if (btnVerPasadas) {
 }
 
 
-    cargarReservas();
-    cargarDatosUsuario();
+    await cargarReservas();
+    await cargarDatosUsuario();
+    modoLectura();
 });
+
