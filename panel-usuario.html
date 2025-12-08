@@ -24,22 +24,30 @@
 <form id="form-usuario" class="mb-4">
     <div class="mb-2">
         <label for="nombre">Nombre:</label>
-        <input type="text" id="nombre" class="form-control" required>
+        <input type="text" id="nombre" class="form-control" required disabled>
     </div>
     <div class="mb-2">
         <label for="apellido">Apellido:</label>
-        <input type="text" id="apellido" class="form-control" required>
+        <input type="text" id="apellido" class="form-control" required disabled>
     </div>
     <div class="mb-2">
         <label for="telefono">Teléfono:</label>
-        <input type="tel" id="telefono" class="form-control" required>
+        <input type="tel" id="telefono" class="form-control" required disabled>
     </div>
     <div class="mb-2">
         <label for="email" class="form-label">Email:</label>
         <input type="email" id="email" class="form-control" disabled>
     </div>
-    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+
+    <!-- Botones -->
+    <button type="button" id="btn-editar" class="btn btn-outline-secondary">
+        Modificar datos
+    </button>
+    <button type="submit" id="btn-guardar" class="btn btn-primary" style="display:none;">
+        Guardar cambios
+    </button>
 </form>
+
 
     <h2>Mis reservas</h2>
     <div id="reservas-container">
