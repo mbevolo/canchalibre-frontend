@@ -189,8 +189,7 @@ if (btnCerrarSesion) {
             });
 
             const result = await res.json();
-            alert(result.mensaje || 'Datos actualizados correctamente.');
-
+            
             // 🔙 Volver a modo lectura después de guardar
             modoLectura();
         } catch (error) {
