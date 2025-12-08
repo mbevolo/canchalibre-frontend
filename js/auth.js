@@ -114,7 +114,6 @@ if (formLogin) {
       if (ok) {
         localStorage.setItem('usuarioLogueado', email);
         localStorage.setItem('emailUsuario', email);
-        alert('Login exitoso');
         window.location.href = 'index.html';
         return;
       }
