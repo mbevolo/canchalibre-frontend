@@ -12,19 +12,24 @@
   </style>
 </head>
 <body class="bg-light">
-    <div class="mb-3">
+
+<div class="mb-3">
   <a href="panel-club.html" class="btn btn-secondary">&larr; Volver al Panel</a>
 </div>
 
-  <div class="container my-4">
-    <h2>Mis Datos del Club</h2>
-    <form id="form-editar-club">
-      <input type="text" id="nombreClub" class="form-control" placeholder="Nombre del club" required>
+<div class="container my-4">
+
+  <h2>Mis Datos del Club</h2>
+
+  <!-- ==================== FORMULARIO ==================== -->
+  <form id="form-editar-club">
+
+      <input type="text" id="nombreClub" class="form-control" placeholder="Nombre del club" required disabled>
       <input type="email" id="emailClub" class="form-control" placeholder="Correo electrónico" disabled>
-      <input type="tel" id="telefonoClub" class="form-control" placeholder="Teléfono" required>
+      <input type="tel" id="telefonoClub" class="form-control" placeholder="Teléfono" required disabled>
 
       <label for="provinciaClub">Provincia:</label>
-      <select id="provinciaClub" class="form-select" required>
+      <select id="provinciaClub" class="form-select" required disabled>
         <option value="">Seleccionar provincia</option>
       </select>
 
@@ -33,172 +38,241 @@
         <option value="">Seleccionar localidad</option>
       </select>
 
-      <input type="text" id="direccionClub" class="form-control" placeholder="Dirección (opcional)">
-      <input type="number" id="latitudClub" class="form-control" step="any" placeholder="Latitud" required>
-      <input type="number" id="longitudClub" class="form-control" step="any" placeholder="Longitud" required>
+      <input type="text" id="direccionClub" class="form-control" placeholder="Dirección (opcional)" disabled>
+      <input type="number" id="latitudClub" class="form-control" step="any" placeholder="Latitud" required disabled>
+      <input type="number" id="longitudClub" class="form-control" step="any" placeholder="Longitud" required disabled>
 
-      <button type="submit" class="btn btn-success">Guardar cambios</button>
-    </form>
+      <!-- BOTONES -->
+      <button type="button" id="btn-editar-club" class="btn btn-outline-secondary">
+        Modificar datos
+      </button>
 
-    <div id="alerta-edicion-club" class="alert alert-success d-none mt-2">✅ Datos actualizados correctamente.</div>
+      <button type="submit" id="btn-guardar-club" class="btn btn-success" style="display:none;">
+        Guardar cambios
+      </button>
 
-    <hr>
-    <h5>Ubicación en el Mapa</h5>
-    <button id="editar-ubicacion" class="btn btn-warning btn-sm mb-2">Editar ubicación en el mapa</button>
-    <div id="map"></div>
+  </form>
 
-    <hr>
-    <h5>Configuración de MercadoPago</h5>
-    <input id="input-access-token" type="text" class="form-control mb-2" placeholder="Access Token de MercadoPago">
-    <button id="btn-guardar-access-token" class="btn btn-primary">Guardar Access Token</button>
-    <a href="manual-access-token.html" target="_blank" class="d-block mt-1">¿Cómo obtener mi Access Token?</a>
-    <div id="mensaje-access-token" class="mt-2"></div>
+  <div id="alerta-edicion-club" class="alert alert-success d-none mt-2">
+    ✅ Datos actualizados correctamente.
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <hr>
 
-  <script>
-    let clubEmail = localStorage.getItem('clubEmail');
-    let clubData = null;
-    let map, marker;
+  <!-- ==================== MAPA ==================== -->
+  <h5>Ubicación en el Mapa</h5>
+  <small class="text-muted">Hacé clic en el mapa para actualizar la ubicación (solo en modo edición)</small>
+  <div id="map"></div>
 
-    async function cargarProvinciasYLocalidades() {
-      const provinciaSelect = document.getElementById('provinciaClub');
-      const localidadSelect = document.getElementById('localidadClub');
-      localidadSelect.disabled = true;
+  <hr>
 
-      try {
-        const res = await fetch('https://api.canchalibre.ar/ubicaciones');
-        const data = await res.json();
+  <!-- ==================== MERCADOPAGO ==================== -->
+  <h5>Configuración de MercadoPago</h5>
+  <input id="input-access-token" type="text" class="form-control mb-2" placeholder="Access Token de MercadoPago">
+  <button id="btn-guardar-access-token" class="btn btn-primary">Guardar Access Token</button>
+  <a href="manual-access-token.html" target="_blank" class="d-block mt-1">¿Cómo obtener mi Access Token?</a>
+  <div id="mensaje-access-token" class="mt-2"></div>
 
-        provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
-        Object.keys(data).forEach(prov => {
-          const option = document.createElement('option');
-          option.value = prov;
-          option.textContent = prov;
-          provinciaSelect.appendChild(option);
-        });
+</div>
 
-        provinciaSelect.addEventListener('change', () => {
-          const provinciaSeleccionada = provinciaSelect.value;
-          localidadSelect.innerHTML = '<option value="">Seleccionar localidad</option>';
-          localidadSelect.disabled = !provinciaSeleccionada;
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-          if (provinciaSeleccionada && data[provinciaSeleccionada]) {
-            data[provinciaSeleccionada].forEach(localidad => {
-              const option = document.createElement('option');
-              option.value = localidad;
-              option.textContent = localidad;
-              localidadSelect.appendChild(option);
-            });
-            if (clubData?.localidad) {
-              setTimeout(() => {
-                localidadSelect.value = clubData.localidad;
-              }, 300);
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Error al cargar provincias y localidades:', err);
-      }
-    }
 
-    async function cargarDatosClub() {
-      try {
-        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
-        clubData = await res.json();
+<script>
+  let clubEmail = localStorage.getItem('clubEmail');
+  let clubData = null;
+  let map, marker;
 
-        document.getElementById('nombreClub').value = clubData.nombre || '';
-        document.getElementById('emailClub').value = clubData.email || '';
-        document.getElementById('telefonoClub').value = clubData.telefono || '';
-        document.getElementById('direccionClub').value = clubData.direccion || '';
-        document.getElementById('latitudClub').value = clubData.latitud || '';
-        document.getElementById('longitudClub').value = clubData.longitud || '';
-        if (clubData.mercadoPagoAccessToken) {
-          document.getElementById('input-access-token').value = clubData.mercadoPagoAccessToken;
-        }
+  // ==========================================================
+  // 📌 Cargar provincias y localidades dinámicamente
+  // ==========================================================
+  async function cargarProvinciasYLocalidades() {
+    const provinciaSelect = document.getElementById('provinciaClub');
+    const localidadSelect = document.getElementById('localidadClub');
+    localidadSelect.disabled = true;
 
-        await cargarProvinciasYLocalidades();
-        if (clubData?.provincia) {
-          document.getElementById('provinciaClub').value = clubData.provincia;
-          document.getElementById('provinciaClub').dispatchEvent(new Event('change'));
-        }
+    try {
+      const res = await fetch('https://api.canchalibre.ar/ubicaciones');
+      const data = await res.json();
 
-        if (clubData.latitud && clubData.longitud) {
-          map.setView([clubData.latitud, clubData.longitud], 15);
-          marker = L.marker([clubData.latitud, clubData.longitud]).addTo(map);
-        }
+      provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
 
-      } catch (err) {
-        alert('Error al cargar datos del club');
-        console.error(err);
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      map = L.map('map').setView([-34.6, -58.38], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-      map.on('click', function(e) {
-        const { lat, lng } = e.latlng;
-        if (marker) {
-          marker.setLatLng(e.latlng);
-        } else {
-          marker = L.marker(e.latlng).addTo(map);
-        }
-        document.getElementById('latitudClub').value = lat.toFixed(6);
-        document.getElementById('longitudClub').value = lng.toFixed(6);
+      Object.keys(data).forEach(prov => {
+        const option = document.createElement('option');
+        option.value = prov;
+        option.textContent = prov;
+        provinciaSelect.appendChild(option);
       });
 
-      await cargarDatosClub();
-    });
+      provinciaSelect.addEventListener('change', () => {
+        const provincia = provinciaSelect.value;
+        localidadSelect.innerHTML = '<option value="">Seleccionar localidad</option>';
+        localidadSelect.disabled = !provincia;
 
-    document.getElementById('form-editar-club').addEventListener('submit', async (e) => {
-      e.preventDefault();
+        if (provincia && data[provincia]) {
+          data[provincia].forEach(loc => {
+            const option = document.createElement('option');
+            option.value = loc;
+            option.textContent = loc;
+            localidadSelect.appendChild(option);
+          });
 
-      const body = {
-        nombre: document.getElementById('nombreClub').value,
-        telefono: document.getElementById('telefonoClub').value,
-        direccion: document.getElementById('direccionClub').value,
-        latitud: document.getElementById('latitudClub').value,
-        longitud: document.getElementById('longitudClub').value,
-        provincia: document.getElementById('provinciaClub').value,
-        localidad: document.getElementById('localidadClub').value,
-      };
-
-      try {
-        const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        if (res.ok) {
-          document.getElementById('alerta-edicion-club').classList.remove('d-none');
-        } else {
-          alert(data.error || 'Error al actualizar los datos');
+          if (clubData?.localidad) {
+            setTimeout(() => localidadSelect.value = clubData.localidad, 200);
+          }
         }
-      } catch (err) {
-        alert('Error al guardar datos');
+      });
+
+    } catch (err) {
+      console.error("Error cargando ubicaciones:", err);
+    }
+  }
+
+  // ==========================================================
+  // 📌 Cargar datos del club
+  // ==========================================================
+  async function cargarDatosClub() {
+    try {
+      const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
+      clubData = await res.json();
+
+      document.getElementById('nombreClub').value = clubData.nombre || '';
+      document.getElementById('emailClub').value = clubData.email || '';
+      document.getElementById('telefonoClub').value = clubData.telefono || '';
+      document.getElementById('direccionClub').value = clubData.direccion || '';
+      document.getElementById('latitudClub').value = clubData.latitud || '';
+      document.getElementById('longitudClub').value = clubData.longitud || '';
+
+      if (clubData.mercadoPagoAccessToken) {
+        document.getElementById('input-access-token').value = clubData.mercadoPagoAccessToken;
       }
-    });
 
-    document.getElementById('btn-guardar-access-token').addEventListener('click', async () => {
-      const token = document.getElementById('input-access-token').value.trim();
-      if (!token) return alert('Debes ingresar el Access Token');
+      await cargarProvinciasYLocalidades();
 
-      const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}/access-token`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: token })
+      if (clubData.provincia) {
+        document.getElementById('provinciaClub').value = clubData.provincia;
+        document.getElementById('provinciaClub').dispatchEvent(new Event('change'));
+      }
+
+      if (clubData.latitud && clubData.longitud) {
+        map.setView([clubData.latitud, clubData.longitud], 15);
+        marker = L.marker([clubData.latitud, clubData.longitud]).addTo(map);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error cargando datos del club");
+    }
+  }
+
+  // ==========================================================
+  // 📌 Modo lectura / edición
+  // ==========================================================
+  const camposClub = [
+    'nombreClub', 'telefonoClub', 'direccionClub',
+    'latitudClub', 'longitudClub', 'provinciaClub', 'localidadClub'
+  ];
+
+  const btnEditarClub = document.getElementById('btn-editar-club');
+  const btnGuardarClub = document.getElementById('btn-guardar-club');
+
+  function modoLecturaClub() {
+    camposClub.forEach(id => document.getElementById(id).disabled = true);
+    document.getElementById('emailClub').disabled = true;
+
+    btnEditarClub.style.display = 'inline-block';
+    btnGuardarClub.style.display = 'none';
+  }
+
+  function modoEdicionClub() {
+    camposClub.forEach(id => document.getElementById(id).disabled = false);
+    document.getElementById('emailClub').disabled = true;
+
+    btnEditarClub.style.display = 'none';
+    btnGuardarClub.style.display = 'inline-block';
+  }
+
+  btnEditarClub.addEventListener('click', modoEdicionClub);
+
+  // ==========================================================
+  // 📌 Guardar datos
+  // ==========================================================
+  document.getElementById('form-editar-club').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const body = {
+      nombre: document.getElementById('nombreClub').value,
+      telefono: document.getElementById('telefonoClub').value,
+      direccion: document.getElementById('direccionClub').value,
+      latitud: document.getElementById('latitudClub').value,
+      longitud: document.getElementById('longitudClub').value,
+      provincia: document.getElementById('provinciaClub').value,
+      localidad: document.getElementById('localidadClub').value,
+    };
+
+    try {
+      const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
-      document.getElementById('mensaje-access-token').textContent = data.mensaje || data.error;
+
+      if (res.ok) {
+        document.getElementById("alerta-edicion-club").classList.remove("d-none");
+        modoLecturaClub();
+      } else {
+        alert(data.error || "Error al guardar datos");
+      }
+
+    } catch (err) {
+      alert('Error al guardar datos');
+    }
+  });
+
+  // ==========================================================
+  // 📌 Guardar Access Token MercadoPago
+  // ==========================================================
+  document.getElementById('btn-guardar-access-token').addEventListener('click', async () => {
+    const token = document.getElementById('input-access-token').value.trim();
+    if (!token) return alert("Debes ingresar el Access Token");
+
+    const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}/access-token`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: token })
     });
-  </script>
-  <script src="js/footer.js"></script>
+
+    const data = await res.json();
+    document.getElementById("mensaje-access-token").textContent = data.mensaje || data.error;
+  });
+
+  // ==========================================================
+  // 📌 Inicialización del mapa y carga inicial
+  // ==========================================================
+  document.addEventListener('DOMContentLoaded', async () => {
+
+    map = L.map('map').setView([-34.6, -58.38], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    map.on('click', function (e) {
+      if (btnGuardarClub.style.display === "none") return; // solo en modo edición
+
+      const { lat, lng } = e.latlng;
+      if (marker) marker.setLatLng(e.latlng);
+      else marker = L.marker(e.latlng).addTo(map);
+
+      document.getElementById('latitudClub').value = lat.toFixed(6);
+      document.getElementById('longitudClub').value = lng.toFixed(6);
+    });
+
+    await cargarDatosClub();
+    modoLecturaClub();
+  });
+</script>
+
+<script src="js/footer.js"></script>
 
 </body>
 </html>
