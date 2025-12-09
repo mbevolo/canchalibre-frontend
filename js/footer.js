@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="cookies.html">Política de Cookies</a> ·
                 <a href="aviso-legal.html">Aviso Legal</a>
             </p>
-            <p>Contacto legal: <strong>legal@canchalibre.ar</strong></p>
+            <p>Contacto: <strong>info@canchalibre.ar</strong></p>
         </footer>
     `;
 
