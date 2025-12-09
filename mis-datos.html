@@ -42,7 +42,7 @@
       <input type="number" id="latitudClub" class="form-control" step="any" placeholder="Latitud" required disabled>
       <input type="number" id="longitudClub" class="form-control" step="any" placeholder="Longitud" required disabled>
 
-      <!-- BOTONES -->
+      <!-- BOTONES DATOS CLUB -->
       <button type="button" id="btn-editar-club" class="btn btn-outline-secondary">
         Modificar datos
       </button>
@@ -68,15 +68,30 @@
 
   <!-- ==================== MERCADOPAGO ==================== -->
   <h5>Configuración de MercadoPago</h5>
-  <input id="input-access-token" type="text" class="form-control mb-2" placeholder="Access Token de MercadoPago">
-  <button id="btn-guardar-access-token" class="btn btn-primary">Guardar Access Token</button>
+
+  <input
+    id="input-access-token"
+    type="text"
+    class="form-control mb-2"
+    placeholder="Access Token de MercadoPago"
+    disabled
+  >
+
+  <div class="d-flex gap-2 mb-2">
+    <button type="button" id="btn-editar-token" class="btn btn-outline-secondary">
+      Modificar Access Token
+    </button>
+    <button type="button" id="btn-guardar-access-token" class="btn btn-primary" style="display:none;">
+      Guardar Access Token
+    </button>
+  </div>
+
   <a href="manual-access-token.html" target="_blank" class="d-block mt-1">¿Cómo obtener mi Access Token?</a>
   <div id="mensaje-access-token" class="mt-2"></div>
 
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 
 <script>
   let clubEmail = localStorage.getItem('clubEmail');
@@ -166,7 +181,7 @@
   }
 
   // ==========================================================
-  // 📌 Modo lectura / edición
+  // 📌 Modo lectura / edición - DATOS DEL CLUB
   // ==========================================================
   const camposClub = [
     'nombreClub', 'telefonoClub', 'direccionClub',
@@ -195,7 +210,7 @@
   btnEditarClub.addEventListener('click', modoEdicionClub);
 
   // ==========================================================
-  // 📌 Guardar datos
+  // 📌 Guardar datos del club
   // ==========================================================
   document.getElementById('form-editar-club').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -232,10 +247,31 @@
   });
 
   // ==========================================================
+  // 📌 Modo lectura / edición - ACCESS TOKEN MP
+  // ==========================================================
+  const inputToken = document.getElementById('input-access-token');
+  const btnEditarToken = document.getElementById('btn-editar-token');
+  const btnGuardarToken = document.getElementById('btn-guardar-access-token');
+
+  function modoLecturaToken() {
+    inputToken.disabled = true;
+    btnEditarToken.style.display = 'inline-block';
+    btnGuardarToken.style.display = 'none';
+  }
+
+  function modoEdicionToken() {
+    inputToken.disabled = false;
+    btnEditarToken.style.display = 'none';
+    btnGuardarToken.style.display = 'inline-block';
+  }
+
+  btnEditarToken.addEventListener('click', modoEdicionToken);
+
+  // ==========================================================
   // 📌 Guardar Access Token MercadoPago
   // ==========================================================
-  document.getElementById('btn-guardar-access-token').addEventListener('click', async () => {
-    const token = document.getElementById('input-access-token').value.trim();
+  btnGuardarToken.addEventListener('click', async () => {
+    const token = inputToken.value.trim();
     if (!token) return alert("Debes ingresar el Access Token");
 
     const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}/access-token`, {
@@ -246,6 +282,10 @@
 
     const data = await res.json();
     document.getElementById("mensaje-access-token").textContent = data.mensaje || data.error;
+
+    if (res.ok) {
+      modoLecturaToken();
+    }
   });
 
   // ==========================================================
@@ -257,7 +297,8 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     map.on('click', function (e) {
-      if (btnGuardarClub.style.display === "none") return; // solo en modo edición
+      // Solo permitir mover marcador en modo edición de datos
+      if (btnGuardarClub.style.display === "none") return;
 
       const { lat, lng } = e.latlng;
       if (marker) marker.setLatLng(e.latlng);
@@ -269,6 +310,7 @@
 
     await cargarDatosClub();
     modoLecturaClub();
+    modoLecturaToken();
   });
 </script>
 
