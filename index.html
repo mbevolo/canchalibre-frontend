@@ -21,16 +21,16 @@
 
 
 <header style="
-    background: #007bff;
+   
     padding: 40px 0;
     text-align: center;">
     
     <img src="img/canchalibre-logo.png"
          alt="CanchaLibre"
-         style="height: 120px; width: auto; border-radius: 12px;">
+         style="height: 200px; width: auto; border-radius: 12px;">
 
     <p style="
-        color: white; 
+        color: rgb(25, 143, 60); 
         font-size: 20px; 
         margin-top: 15px;">
         Encontrá tu cancha disponible en segundos
@@ -40,45 +40,62 @@
 
 
     <main>
-        <section class="buscador">
-            <h2>Buscador de Turnos</h2>
-            <form id="formulario-busqueda">
+<section class="buscador buscador-card">
+    <h2 class="buscador-titulo">Buscador de Turnos</h2>
 
-                <label for="deporte">Deporte:</label>
+    <form id="formulario-busqueda">
+        <div class="buscador-inline">
+
+            <!-- Deporte -->
+            <div class="buscador-item">
+                <label for="deporte">Deporte</label>
                 <select id="deporte" required>
                     <option value="">Seleccionar</option>
                     <option value="futbol">Fútbol</option>
                     <option value="padel">Pádel</option>
                     <option value="tenis">Tenis</option>
                 </select>
+            </div>
 
-<label for="provincia" style="display:flex; align-items:center; gap:8px;">
-    Provincia:
-    <button type="button" id="usar-ubicacion" style="margin-left:10px; font-size:0.8em;">📍 Usar mi ubicación</button>
-</label>
-
-<select id="provincia">
-    <option value="">Todas</option>
-</select>
-
+            <!-- Provincia + Usar mi ubicación -->
+            <div class="buscador-item">
+                <div class="buscador-label-row">
+                    <label for="provincia">Provincia</label>
+                    <a href="#" id="usar-ubicacion" class="link-ubicacion">
+                        Usar mi ubicación
+                    </a>
+                </div>
+                <select id="provincia">
                     <option value="">Todas</option>
-                    <!-- Se carga desde app.js -->
+                    <!-- se completa desde app.js -->
                 </select>
+            </div>
 
-                <label for="localidad">Localidad:</label>
+            <!-- Localidad -->
+            <div class="buscador-item">
+                <label for="localidad">Localidad</label>
                 <select id="localidad" disabled>
                     <option value="">Todas</option>
                 </select>
-                <label for="club">Club:</label>
+            </div>
+
+            <!-- Club -->
+            <div class="buscador-item">
+                <label for="club">Club</label>
                 <select id="club">
                     <option value="">Todos los clubes</option>
                 </select>
+            </div>
 
-
-                <label for="fecha">Fecha:</label>
+            <!-- Fecha -->
+            <div class="buscador-item">
+                <label for="fecha">Fecha</label>
                 <input type="date" id="fecha" required>
+            </div>
 
-                <label for="hora">Hora:</label>
+            <!-- Hora -->
+            <div class="buscador-item">
+                <label for="hora">Hora</label>
                 <select id="hora">
                     <option value="">Cualquier hora</option>
                     <option value="08:00">08:00</option>
@@ -97,10 +114,18 @@
                     <option value="21:00">21:00</option>
                     <option value="22:00">22:00</option>
                 </select>
+            </div>
 
-                <button type="submit">Buscar Turnos</button>
-            </form>
-        </section>
+        </div>
+
+        <button type="submit" class="btn-buscar-turnos">
+            Buscar Turnos
+        </button>
+    </form>
+</section>
+
+
+
 
         <section id="resultados" class="resultados">
             <!-- Acá se van a mostrar los turnos encontrados -->

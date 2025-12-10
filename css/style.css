@@ -65,7 +65,7 @@ body {
 }
 
 header {
-    background-color: #007bff;
+    
     color: white;
     padding: 20px;
     text-align: center;
@@ -306,3 +306,111 @@ button:hover, .btn:hover {
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
+
+
+/* Contenedor principal del buscador */
+.buscador-card {
+  max-width: 1100px;
+  margin: 20px auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px 24px;
+}
+
+.buscador-titulo {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* Línea horizontal de campos */
+.buscador-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Cada bloque (deporte, provincia, etc.) */
+.buscador-item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buscador-item label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+}
+
+.buscador-item select,
+.buscador-item input[type="date"] {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+/* Fila label + botón "Usar mi ubicación" */
+.buscador-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+
+.link-ubicacion {
+  font-size: 11px;
+  color: #00C16A;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.link-ubicacion:hover {
+  text-decoration: underline;
+}
+
+
+/* Botón Buscar Turnos */
+.btn-buscar-turnos {
+  margin-top: 16px;
+  width: 100%;
+  background-color: #00C16A;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.btn-buscar-turnos:hover {
+  background-color: #00a85c;
+}
+
+/* En escritorio, forzamos una sola línea horizontal */
+@media (min-width: 992px) {
+  .buscador-inline {
+    flex-wrap: nowrap;
+  }
+}
+
+/* En mobile, que se apilen prolijamente */
+@media (max-width: 768px) {
+  .buscador-item {
+    flex: 1 1 100%;
+  }
+}
