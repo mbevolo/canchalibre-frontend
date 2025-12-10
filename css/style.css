@@ -420,7 +420,7 @@ button:hover, .btn:hover {
 .hero-header {
     width: 100%;
     height: 260px;
-    background-image: url("img/hero-canchas.jpg");
+    background-image: url("img/hero-canchas.png");
     background-size: cover;
     background-position: center;
     display: flex;
