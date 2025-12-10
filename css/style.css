@@ -419,7 +419,7 @@ button:hover, .btn:hover {
 /* ===== Hero con imagen deportiva ===== */
 .hero-header {
     width: 100%;
-    height: 260px;
+    height: 520px;
     background-image: url("../img/hero-canchas.png");
     background-size: cover;
     background-position: center;
@@ -449,8 +449,17 @@ button:hover, .btn:hover {
 
 /* ===== Buscador flotante sobre el hero ===== */
 .buscador-card {
-    margin-top: -40px;
-    z-index: 10;
     position: relative;
+    margin: -60px auto 40px auto; /* se mete sobre el header */
+    z-index: 10;
     max-width: 1200px;
+    background: rgba(255, 255, 255, 0.92); /* blanco con leve transparencia */
+    backdrop-filter: blur(4px); /* efecto premium */
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+body {
+    background: #f4f4f4; /* tonos suaves para que combine */
 }
