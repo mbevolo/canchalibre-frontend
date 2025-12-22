@@ -71,6 +71,110 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     await renderBloqueDestacar();
 
+    // ============================================
+// 🔗 Link + QR del buscador (para compartir)
+// ============================================
+(function initLinkYQRBuscadorClub() {
+  const inputLink = document.getElementById('club-link-buscador');
+  const btnCopiar = document.getElementById('btn-copiar-link-buscador');
+  const btnGenerarQR = document.getElementById('btn-generar-qr-buscador');
+  const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
+  const contQR = document.getElementById('qr-buscador');
+
+  // Si este panel no tiene el bloque, no hacemos nada
+  if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
+
+  // clubId: lo guardás en login-club.js como localStorage.setItem('clubId', data.clubId)
+  const clubId = (localStorage.getItem('clubId') || '').trim();
+  if (!clubId) {
+    inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
+    btnCopiar.disabled = true;
+    btnGenerarQR.disabled = true;
+    return;
+  }
+
+  // Armamos el link FINAL que abre el buscador con club fijo
+  // (tu frontend ya lo lee con ?clubId=...)
+  const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
+  inputLink.value = link;
+
+  // ---- Copiar link
+  btnCopiar.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      alert('✅ Link copiado');
+    } catch (e) {
+      // fallback viejo
+      inputLink.select();
+      document.execCommand('copy');
+      alert('✅ Link copiado');
+    }
+  });
+
+  // ---- Generar QR
+  let ultimoQRDataUrl = null;
+
+  function generarDataUrlDesdeCanvas(canvas) {
+    try {
+      return canvas.toDataURL('image/png');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  btnGenerarQR.addEventListener('click', () => {
+    // Validar librería
+    if (typeof QRCode === 'undefined') {
+      alert('❌ No se pudo cargar la librería de QR. Revisá que agregaste qrcode.min.js en el HTML.');
+      return;
+    }
+
+    // Limpiar QR anterior
+    contQR.innerHTML = '';
+    ultimoQRDataUrl = null;
+    btnDescargarQR.disabled = true;
+
+    // Crear QR
+    new QRCode(contQR, {
+      text: link,
+      width: 220,
+      height: 220
+    });
+
+    // qrcodejs a veces crea <img> o <canvas>, esperamos un tick
+    setTimeout(() => {
+      const img = contQR.querySelector('img');
+      const canvas = contQR.querySelector('canvas');
+
+      if (img && img.src) {
+        ultimoQRDataUrl = img.src;
+      } else if (canvas) {
+        ultimoQRDataUrl = generarDataUrlDesdeCanvas(canvas);
+      }
+
+      if (ultimoQRDataUrl) {
+        btnDescargarQR.disabled = false;
+        alert('✅ QR generado');
+      } else {
+        alert('⚠️ QR generado pero no se pudo preparar la descarga (igual se ve en pantalla).');
+      }
+    }, 50);
+  });
+
+  // ---- Descargar QR (PNG)
+  btnDescargarQR.addEventListener('click', () => {
+    if (!ultimoQRDataUrl) return;
+
+    const a = document.createElement('a');
+    a.href = ultimoQRDataUrl;
+    a.download = `qr-canchalibre-club-${clubId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+})();
+
+
     // === BLOQUE DESTACAR CLUB ===
     async function renderBloqueDestacar() {
         const bloque = document.getElementById('bloque-destacar-club');
