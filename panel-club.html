@@ -9,260 +9,306 @@
     <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.8/main.min.css" rel="stylesheet">
     <link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet">
   </head>
+
   <body class="bg-light">
 
-<div class="container my-4">
-  <div id="bloque-destacar-club"></div>
+    <div class="container my-4">
+      <div id="bloque-destacar-club"></div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>Panel del Club</h1>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Panel del Club</h1>
 
-  <div>
-    <button id="btn-mis-datos" class="btn btn-outline-primary btn-sm me-2">Mis Datos</button>
-    <button id="cerrar-sesion" class="btn btn-danger btn-sm">Cerrar sesión</button>
-  </div>
-</div>
+        <div>
+          <button id="btn-mis-datos" class="btn btn-outline-primary btn-sm me-2">Mis Datos</button>
+          <button id="cerrar-sesion" class="btn btn-danger btn-sm">Cerrar sesión</button>
+        </div>
+      </div>
 
-<!-- NAV TABS -->
-<ul class="nav nav-tabs" id="clubTabs" role="tablist">
+      <!-- NAV TABS -->
+      <ul class="nav nav-tabs" id="clubTabs" role="tablist">
+        <!-- Tabs internas -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#infoTab" type="button" role="tab">
+            Información del Club
+          </button>
+        </li>
 
-  <!-- Tabs internas -->
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#infoTab" type="button" role="tab">Información del Club</button>
-  </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="canchas-tab" data-bs-toggle="tab" data-bs-target="#canchasTab" type="button" role="tab">
+            Canchas
+          </button>
+        </li>
 
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="canchas-tab" data-bs-toggle="tab" data-bs-target="#canchasTab" type="button" role="tab">Canchas</button>
-  </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="agenda-tab" data-bs-toggle="tab" data-bs-target="#agendaTab" type="button" role="tab">
+            Agenda
+          </button>
+        </li>
 
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="agenda-tab" data-bs-toggle="tab" data-bs-target="#agendaTab" type="button" role="tab">Agenda</button>
-  </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="reservas-tab" data-bs-toggle="tab" data-bs-target="#reservasTab" type="button" role="tab">
+            Reservas
+          </button>
+        </li>
 
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="reservas-tab" data-bs-toggle="tab" data-bs-target="#reservasTab" type="button" role="tab">Reservas</button>
-  </li>
+        <!-- ✅ Nueva pestaña Compartir/QR -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="compartir-tab" data-bs-toggle="tab" data-bs-target="#compartirTab" type="button" role="tab">
+            Compartir / QR
+          </button>
+        </li>
 
-  <!-- ✅ Estadísticas (abre página externa) -->
-  <li class="nav-item ms-auto" role="presentation">
-    <a class="nav-link text-primary fw-bold" href="estadisticas.html">
-      Estadísticas
-    </a>
-  </li>
+        <!-- ✅ Estadísticas (abre página externa) -->
+        <li class="nav-item ms-auto" role="presentation">
+          <a class="nav-link text-primary fw-bold" href="estadisticas.html">
+            Estadísticas
+          </a>
+        </li>
+      </ul>
 
-</ul>
+      <!-- TAB CONTENT -->
+      <div class="tab-content mt-3" id="clubTabsContent">
 
-
-<!-- TAB CONTENT -->
-<div class="tab-content mt-3" id="clubTabsContent">
-  <div class="tab-pane fade show active" id="infoTab" role="tabpanel" aria-labelledby="info-tab">
-    <div id="info-bienvenida" class="mb-3"></div>
-    <h5>Reservas para hoy</h5>
-    <div id="lista-reservas-hoy" class="mt-3"></div>
-    <!-- ============================
-     Link / QR del buscador (Club)
-     ============================ -->
-<div class="card mt-3">
-  <div class="card-body">
-    <h5 class="card-title">Link / QR para reservar turnos</h5>
-    <p class="card-text mb-2">
-      Compartí este link o QR para que tus clientes entren directo al buscador con tu club ya seleccionado.
-    </p>
-
-    <div class="mb-2">
-      <label class="form-label">Link del buscador</label>
-      <input id="club-link-buscador" class="form-control" type="text" readonly />
-    </div>
-
-    <div class="d-flex gap-2 flex-wrap">
-      <button id="btn-copiar-link-buscador" class="btn btn-primary" type="button">
-        Copiar link
-      </button>
-      <button id="btn-generar-qr-buscador" class="btn btn-outline-primary" type="button">
-        Generar QR
-      </button>
-      <button id="btn-descargar-qr-buscador" class="btn btn-outline-secondary" type="button" disabled>
-        Descargar QR
-      </button>
-    </div>
-
-    <div class="mt-3">
-      <div id="qr-buscador" style="width: 220px; height: 220px;"></div>
-      <small class="text-muted d-block mt-2">
-        Tip: imprimilo y pegalo en el club.
-      </small>
-    </div>
-  </div>
-</div>
-
-  </div>
-
-  <div class="tab-pane fade" id="canchasTab" role="tabpanel" aria-labelledby="canchas-tab">
-    <div id="canchas-list" class="row g-3 mb-3"></div>
-    <button id="agregar-cancha" class="btn btn-success">Agregar cancha</button>
-  </div>
-
-<div class="tab-pane fade" id="agendaTab" role="tabpanel" aria-labelledby="agenda-tab">
-    <div class="container-fluid px-3">
-        
-        <!-- SELECTOR DE CANCHA AFUERA DEL CONTENEDOR DE LA AGENDA -->
-        <div id="selector-cancha-wrapper" class="mb-3">
-            <label for="select-cancha-agenda" class="form-label">Seleccioná la cancha:</label>
-            <select id="select-cancha-agenda" class="form-select" style="max-width:280px;"></select>
+        <!-- INFO -->
+        <div class="tab-pane fade show active" id="infoTab" role="tabpanel" aria-labelledby="info-tab">
+          <div id="info-bienvenida" class="mb-3"></div>
+          <h5>Reservas para hoy</h5>
+          <div id="lista-reservas-hoy" class="mt-3"></div>
         </div>
 
-        <!-- ACA VA LA AGENDA -->
-        <div id="agendas-container"></div>
-    </div>
-</div>
-
-
-  <div class="tab-pane fade" id="reservasTab" role="tabpanel" aria-labelledby="reservas-tab">
-    <ul class="nav nav-tabs mb-2" id="subTabsReservas" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="sub-reservas-tab" data-bs-toggle="tab" data-bs-target="#subReservas" type="button" role="tab">Reservas</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="sub-historial-tab" data-bs-toggle="tab" data-bs-target="#subHistorial" type="button" role="tab">Historial</button>
-      </li>
-    </ul>
-    <div class="tab-content">
-      <div class="tab-pane fade show active" id="subReservas" role="tabpanel" aria-labelledby="sub-reservas-tab">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Cancha</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Usuario</th>
-              <th>Estado</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="reservas-list"></tbody>
-        </table>
-      </div>
-      <div class="tab-pane fade" id="subHistorial" role="tabpanel" aria-labelledby="sub-historial-tab">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Cancha</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Usuario</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="historial-list"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- Modales -->
-<div class="modal fade" id="modalCancha" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Agregar / Editar cancha</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input id="nombre-cancha" type="text" class="form-control mb-2" placeholder="Nombre de la cancha">
-
-        <select id="tipo-cancha" class="form-select mb-2">
-          <option value="futbol">Fútbol</option>
-          <option value="padel">Pádel</option>
-          <option value="tenis">Tenis</option>
-        </select>
-
-        <input id="precio-cancha" type="number" class="form-control mb-2" placeholder="Precio por hora">
-
-        <!-- Tarifa nocturna -->
-        <div class="mb-2">
-        <label for="nocturno-desde" class="form-label">Horario nocturno desde</label>
-        <select id="nocturno-desde" class="form-select">
-        <option value="">Sin nocturno</option>
-        <option value="18">18:00</option>
-        <option value="19">19:00</option>
-        <option value="20">20:00</option>
-        <option value="21">21:00</option>
-        <option value="22">22:00</option>
-       </select>
-  </div>
-
-<div class="mb-2">
-  <label for="precio-nocturno" class="form-label">Precio nocturno</label>
-  <input id="precio-nocturno" type="number" class="form-control" placeholder="Ej: 12000">
-</div>
-        <!-- Duración del turno -->
-        <div class="mb-2">
-        <label for="duracion-turno" class="form-label">Duración del turno</label>
-        <select id="duracion-turno" class="form-select">
-        <option value="60">1 hora</option>
-        <option value="90">1 hora y media</option>
-        </select>
+        <!-- CANCHAS -->
+        <div class="tab-pane fade" id="canchasTab" role="tabpanel" aria-labelledby="canchas-tab">
+          <div id="canchas-list" class="row g-3 mb-3"></div>
+          <button id="agregar-cancha" class="btn btn-success">Agregar cancha</button>
         </div>
 
-        <label for="hora-desde">Hora desde:</label>
-        <select id="hora-desde" class="form-select mb-2"></select>
+        <!-- AGENDA -->
+        <div class="tab-pane fade" id="agendaTab" role="tabpanel" aria-labelledby="agenda-tab">
+          <div class="container-fluid px-3">
 
-        <label for="hora-hasta">Hora hasta:</label>
-        <select id="hora-hasta" class="form-select mb-2"></select>
+            <!-- SELECTOR DE CANCHA AFUERA DEL CONTENEDOR DE LA AGENDA -->
+            <div id="selector-cancha-wrapper" class="mb-3">
+              <label for="select-cancha-agenda" class="form-label">Seleccioná la cancha:</label>
+              <select id="select-cancha-agenda" class="form-select" style="max-width:280px;"></select>
+            </div>
 
-        <label class="mb-1">Días disponibles:</label>
+            <!-- ACA VA LA AGENDA -->
+            <div id="agendas-container"></div>
+          </div>
+        </div>
 
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="lunes" id="dia-lunes" checked><label class="form-check-label" for="dia-lunes">Lunes</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="martes" id="dia-martes" checked><label class="form-check-label" for="dia-martes">Martes</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="miercoles" id="dia-miercoles" checked><label class="form-check-label" for="dia-miercoles">Miércoles</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="jueves" id="dia-jueves" checked><label class="form-check-label" for="dia-jueves">Jueves</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="viernes" id="dia-viernes" checked><label class="form-check-label" for="dia-viernes">Viernes</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="sabado" id="dia-sabado" checked><label class="form-check-label" for="dia-sabado">Sábado</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" value="domingo" id="dia-domingo" checked><label class="form-check-label" for="dia-domingo">Domingo</label></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="guardar-cancha">Guardar cancha</button>
+        <!-- RESERVAS -->
+        <div class="tab-pane fade" id="reservasTab" role="tabpanel" aria-labelledby="reservas-tab">
+          <ul class="nav nav-tabs mb-2" id="subTabsReservas" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="sub-reservas-tab" data-bs-toggle="tab" data-bs-target="#subReservas" type="button" role="tab">
+                Reservas
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="sub-historial-tab" data-bs-toggle="tab" data-bs-target="#subHistorial" type="button" role="tab">
+                Historial
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="subReservas" role="tabpanel" aria-labelledby="sub-reservas-tab">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cancha</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="reservas-list"></tbody>
+              </table>
+            </div>
+
+            <div class="tab-pane fade" id="subHistorial" role="tabpanel" aria-labelledby="sub-historial-tab">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cancha</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="historial-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPARTIR / QR -->
+        <div class="tab-pane fade" id="compartirTab" role="tabpanel" aria-labelledby="compartir-tab">
+
+          <div class="alert alert-info">
+            Compartí este link o QR con tus clientes para que reserven turnos
+            directamente en tus canchas.
+          </div>
+
+          <!-- ============================
+               Link / QR del buscador (Club)
+               ============================ -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Link / QR para reservar turnos</h5>
+
+              <div class="mb-2">
+                <label class="form-label">Link del buscador</label>
+                <input id="club-link-buscador" class="form-control" type="text" readonly />
+              </div>
+
+              <div class="d-flex gap-2 flex-wrap mb-3">
+                <button id="btn-copiar-link-buscador" class="btn btn-primary" type="button">
+                  Copiar link
+                </button>
+                <button id="btn-generar-qr-buscador" class="btn btn-outline-primary" type="button">
+                  Generar QR
+                </button>
+                <button id="btn-descargar-qr-buscador" class="btn btn-outline-secondary" type="button" disabled>
+                  Descargar QR
+                </button>
+              </div>
+
+              <div id="qr-buscador" style="width:220px;height:220px;"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /#clubTabsContent -->
+    </div><!-- /.container -->
+
+    <!-- Modales -->
+    <div class="modal fade" id="modalCancha" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Agregar / Editar cancha</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input id="nombre-cancha" type="text" class="form-control mb-2" placeholder="Nombre de la cancha">
+
+            <select id="tipo-cancha" class="form-select mb-2">
+              <option value="futbol">Fútbol</option>
+              <option value="padel">Pádel</option>
+              <option value="tenis">Tenis</option>
+            </select>
+
+            <input id="precio-cancha" type="number" class="form-control mb-2" placeholder="Precio por hora">
+
+            <!-- Tarifa nocturna -->
+            <div class="mb-2">
+              <label for="nocturno-desde" class="form-label">Horario nocturno desde</label>
+              <select id="nocturno-desde" class="form-select">
+                <option value="">Sin nocturno</option>
+                <option value="18">18:00</option>
+                <option value="19">19:00</option>
+                <option value="20">20:00</option>
+                <option value="21">21:00</option>
+                <option value="22">22:00</option>
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label for="precio-nocturno" class="form-label">Precio nocturno</label>
+              <input id="precio-nocturno" type="number" class="form-control" placeholder="Ej: 12000">
+            </div>
+
+            <!-- Duración del turno -->
+            <div class="mb-2">
+              <label for="duracion-turno" class="form-label">Duración del turno</label>
+              <select id="duracion-turno" class="form-select">
+                <option value="60">1 hora</option>
+                <option value="90">1 hora y media</option>
+              </select>
+            </div>
+
+            <label for="hora-desde">Hora desde:</label>
+            <select id="hora-desde" class="form-select mb-2"></select>
+
+            <label for="hora-hasta">Hora hasta:</label>
+            <select id="hora-hasta" class="form-select mb-2"></select>
+
+            <label class="mb-1">Días disponibles:</label>
+
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="lunes" id="dia-lunes" checked>
+              <label class="form-check-label" for="dia-lunes">Lunes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="martes" id="dia-martes" checked>
+              <label class="form-check-label" for="dia-martes">Martes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="miercoles" id="dia-miercoles" checked>
+              <label class="form-check-label" for="dia-miercoles">Miércoles</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="jueves" id="dia-jueves" checked>
+              <label class="form-check-label" for="dia-jueves">Jueves</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="viernes" id="dia-viernes" checked>
+              <label class="form-check-label" for="dia-viernes">Viernes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="sabado" id="dia-sabado" checked>
+              <label class="form-check-label" for="dia-sabado">Sábado</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="domingo" id="dia-domingo" checked>
+              <label class="form-check-label" for="dia-domingo">Domingo</label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="guardar-cancha">Guardar cancha</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-
-<div class="modal fade" id="modalTurno" tabindex="-1" aria-labelledby="modalTurnoLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTurnoLabel">Detalle del Turno</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body" id="turno-detalle-body"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger" id="btn-cancelar-turno" style="display: none;">Cancelar Turno</button>
-        <button type="button" class="btn btn-success" id="btn-reservar-turno" style="display: none;">Reservar Turno</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    <div class="modal fade" id="modalTurno" tabindex="-1" aria-labelledby="modalTurnoLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTurnoLabel">Detalle del Turno</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body" id="turno-detalle-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="btn-cancelar-turno" style="display: none;">Cancelar Turno</button>
+            <button type="button" class="btn btn-success" id="btn-reservar-turno" style="display: none;">Reservar Turno</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="js/club-advanced.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="js/club-advanced.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-<script>
-  document.getElementById('btn-mis-datos').addEventListener('click', () => {
-    window.location.href = 'mis-datos.html';
-  });
-</script>
+    <script>
+      document.getElementById('btn-mis-datos').addEventListener('click', () => {
+        window.location.href = 'mis-datos.html';
+      });
+    </script>
 
-
-<script src="js/footer.js"></script>
+    <script src="js/footer.js"></script>
 
   </body>
 </html>
