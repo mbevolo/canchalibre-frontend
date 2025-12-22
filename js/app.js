@@ -3,18 +3,29 @@
 // ==============================
 
 // ✅ Leer clubId desde la URL (para QR / link directo)
+// Ej: https://canchalibre.ar/?clubId=6930aea8d20251679515f08c
 function getClubIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const clubId = params.get('clubId');
   return clubId && clubId.trim() ? clubId.trim() : null;
 }
 
-// ✅ Global: club preestablecido por URL (si viene)
-const CLUB_ID_FROM_URL = getClubIdFromUrl();
+// ✅ Resolver clubId (Mongo _id) -> email usando tu backend
+async function resolverClubEmailDesdeId(clubId) {
+  try {
+    const res = await fetch(`https://api.canchalibre.ar/club-id/${encodeURIComponent(clubId)}`);
+    if (!res.ok) throw new Error('No se pudo resolver clubId');
+    const club = await res.json();
+    return club?.email || null;
+  } catch (e) {
+    console.error('❌ Error resolviendo clubId -> email:', e);
+    return null;
+  }
+}
 
-// ⚠️ En tu frontend el <select id="club"> usa como value el EMAIL del club.
-// Por eso, el "clubId" del link/QR debe ser el email del club.
-// Ejemplo: https://canchalibre.ar/?clubId=club@gmail.com
+// ✅ Variables globales del flujo QR
+const CLUB_ID_RAW_FROM_URL = getClubIdFromUrl(); // lo que viene en la URL (normalmente _id)
+let CLUB_EMAIL_FROM_URL = null;                  // el email resuelto (lo que usa el sistema actual)
 
 window.sanitizeHTML = function (str) {
   const div = document.createElement('div');
@@ -84,7 +95,7 @@ function ordenarTurnosPorDestacado(turnos, clubes) {
 async function cargarUbicaciones() {
   const provinciaSelect = document.getElementById('provincia');
   const localidadSelect = document.getElementById('localidad');
-  if (!provinciaSelect || !localidadSelect) return; // la página no tiene filtros de ubicación
+  if (!provinciaSelect || !localidadSelect) return;
 
   try {
     const res = await fetch('https://api.canchalibre.ar/ubicaciones');
@@ -108,18 +119,10 @@ async function cargarUbicaciones() {
       localidadSelect.innerHTML = '<option value="">Todas</option>';
       localidadSelect.disabled = true;
 
-      // 🔄 Reset del select de clubes
+      // Reset del select de clubes
       const clubSelect = document.getElementById('club');
       if (clubSelect) {
         clubSelect.innerHTML = '<option value="">Todos los clubes</option>';
-
-        // ✅ Si viene club por URL, NO dejamos que provincia cambie te lo "borre"
-        if (CLUB_ID_FROM_URL) {
-          // Re-aplicamos apenas se resetee (por si algún CSS/UX cambia)
-          setTimeout(() => {
-            clubSelect.value = CLUB_ID_FROM_URL;
-          }, 0);
-        }
       }
 
       if (data[seleccion]) {
@@ -149,18 +152,13 @@ async function cargarClubs(provincia, localidad) {
 
   clubSelect.innerHTML = '<option value="">Todos los clubes</option>';
 
-  // ✅ Si viene club por URL, priorizamos eso:
-  // - Permitimos cargar clubes por provincia/localidad si hay localidad
-  // - Pero SIEMPRE intentamos seleccionar el club del QR al final (si existe en la lista)
-  // - Si NO hay localidad, igual dejamos el select, y lo intentamos seleccionar si ya existe opción.
   if (!localidad) {
     console.log('ℹ️ cargarClubs: localidad vacía, no cargo clubes.');
 
-    // ✅ Intento seleccionar club preestablecido si ya está en opciones
-    if (CLUB_ID_FROM_URL) {
-      clubSelect.value = CLUB_ID_FROM_URL;
-      clubSelect.dispatchEvent(new Event('change'));
-      clubSelect.disabled = true; // opcional: “fijo” desde QR
+    // Si el club vino por URL y ya está resuelto, lo intento setear igual
+    if (CLUB_EMAIL_FROM_URL) {
+      clubSelect.value = CLUB_EMAIL_FROM_URL;
+      clubSelect.disabled = true;
     }
     return;
   }
@@ -174,7 +172,7 @@ async function cargarClubs(provincia, localidad) {
 
     data.forEach(club => {
       const opt = document.createElement('option');
-      opt.value = club.email;        // usamos el email como ID único
+      opt.value = club.email;        // 👈 el sistema actual usa email
       opt.textContent = club.nombre; // lo que ve el usuario
       clubSelect.appendChild(opt);
     });
@@ -183,20 +181,18 @@ async function cargarClubs(provincia, localidad) {
       console.warn('⚠️ No hay clubes para esa localidad (revisar datos en la BD).');
     }
 
-    // ✅ Si viene clubId por URL, lo preselecciono y disparo el flujo
-    if (CLUB_ID_FROM_URL) {
-      clubSelect.value = CLUB_ID_FROM_URL;
+    // Si el club vino por URL y ya lo resolvimos a email -> lo preseleccionamos
+    if (CLUB_EMAIL_FROM_URL) {
+      clubSelect.value = CLUB_EMAIL_FROM_URL;
 
-      // Si no existía en esta localidad, avisamos en consola (no rompas UX)
-      const existe = Array.from(clubSelect.options).some(o => o.value === CLUB_ID_FROM_URL);
+      const existe = Array.from(clubSelect.options).some(o => o.value === CLUB_EMAIL_FROM_URL);
       if (!existe) {
-        console.warn('⚠️ El clubId del link no existe en la lista cargada para esa provincia/localidad.');
+        console.warn('⚠️ El club del link no existe en la lista cargada para esa provincia/localidad.');
       }
 
-      clubSelect.dispatchEvent(new Event('change'));
-      clubSelect.disabled = true; // opcional: “fijo” desde QR
+      clubSelect.disabled = true;
 
-      // (Opcional) También podés bloquear provincia/localidad para que no se cambie:
+      // Opcional: bloquear provincia/localidad para que no lo cambien
       const provinciaSelect = document.getElementById('provincia');
       const localidadSelect = document.getElementById('localidad');
       if (provinciaSelect) provinciaSelect.disabled = true;
@@ -247,42 +243,162 @@ function mostrarMapa(turnos) {
   });
 }
 
+// ==================================================
+// 🧭 Corrección de nombres de provincia (GLOBAL)
+// ==================================================
+function normalizarProvinciaGPS(p) {
+  const t = String(p || '').toLowerCase();
+
+  if (t.includes("buenos aires") && t.includes("provincia")) return "Buenos Aires";
+  if (t.includes("ciudad autónoma") || t.includes("caba") || t.includes("capital federal")) return "CABA";
+  if (t.includes("cordoba")) return "Córdoba";
+  if (t.includes("neuquen")) return "Neuquén";
+  if (t.includes("rio negro")) return "Río Negro";
+  if (t.includes("misiones")) return "Misiones";
+
+  return String(p || '').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ==================================================
+// 🌍 Reverse Geocoding → Nominatim (GLOBAL)
+// ==================================================
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+
+    const res = await fetch(url, {
+      headers: { "User-Agent": "CanchaLibre/1.0" }
+    });
+
+    const data = await res.json();
+    if (!data.address) return;
+
+    const provinciaRAW = data.address.state || "";
+    const localidadRAW =
+      data.address.town ||
+      data.address.city ||
+      data.address.village ||
+      data.address.suburb ||
+      "";
+
+    const provincia = normalizarProvinciaGPS(provinciaRAW);
+    const localidad = localidadRAW;
+
+    console.log("📌 Provincia detectada:", provincia);
+    console.log("📌 Localidad detectada:", localidad);
+
+    if (provincia && localidad) {
+      autocompletarProvinciaLocalidad(provincia, localidad);
+    }
+  } catch (err) {
+    console.error("❌ Error en reverse geocoding:", err);
+  }
+}
+
+// ==================================================
+// 🧭 Autocompletar selects según GPS (GLOBAL)
+// ==================================================
+async function autocompletarProvinciaLocalidad(provincia, localidad) {
+  const selProv = document.getElementById("provincia");
+  const selLoc = document.getElementById("localidad");
+  if (!selProv || !selLoc) return;
+
+  console.log("🎯 Intentando autocompletar:", provincia, localidad);
+
+  // ✅ Si viene club por URL (QR), NO autocompletamos por GPS (para no pisar el flujo)
+  if (CLUB_EMAIL_FROM_URL) {
+    console.log("🔒 Club fijo por URL detectado. Se omite autocompletado por GPS.");
+    const clubSelect = document.getElementById('club');
+    if (clubSelect) {
+      clubSelect.value = CLUB_EMAIL_FROM_URL;
+      clubSelect.disabled = true;
+    }
+    return;
+  }
+
+  let intentos = 0;
+  const esperar = setInterval(() => {
+    intentos++;
+
+    if (selProv.options.length > 1) {
+      clearInterval(esperar);
+      seleccionarProvLoc();
+    }
+
+    if (intentos > 20) {
+      clearInterval(esperar);
+      console.warn("⏳ Timeout esperando carga de provincias");
+    }
+  }, 200);
+
+  function seleccionarProvLoc() {
+    for (let opt of selProv.options) {
+      if (opt.text.toLowerCase() === provincia.toLowerCase()) {
+        selProv.value = opt.value;
+        break;
+      }
+    }
+
+    selProv.dispatchEvent(new Event("change"));
+
+    setTimeout(() => {
+      for (let opt of selLoc.options) {
+        if (opt.text.toLowerCase() === localidad.toLowerCase()) {
+          selLoc.value = opt.value;
+          break;
+        }
+      }
+      selLoc.dispatchEvent(new Event("change"));
+    }, 300);
+  }
+}
+
 // ==============================
 // DOMContentLoaded
 // ==============================
-window.addEventListener('DOMContentLoaded', () => {
-  // ==========================================
-  // 🛰 DETECCIÓN AUTOMÁTICA DE UBICACIÓN (silenciosa)
-  // ==========================================
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      },
-      (err) => {
-        console.warn("⚠️ No se pudo obtener la ubicación automática:", err.message);
+window.addEventListener('DOMContentLoaded', async () => {
+  // 1) Si viene ?clubId=... lo resolvemos a email para mantener compatibilidad
+  if (CLUB_ID_RAW_FROM_URL) {
+    CLUB_EMAIL_FROM_URL = await resolverClubEmailDesdeId(CLUB_ID_RAW_FROM_URL);
+
+    if (CLUB_EMAIL_FROM_URL) {
+      console.log('🔒 Club fijado por QR:', CLUB_EMAIL_FROM_URL);
+
+      // Bloquear provincia/localidad para que no cambien el club fijado
+      const selProv = document.getElementById('provincia');
+      const selLoc = document.getElementById('localidad');
+      if (selProv) selProv.disabled = true;
+      if (selLoc) selLoc.disabled = true;
+
+      const clubSelect = document.getElementById('club');
+      if (clubSelect) {
+        clubSelect.value = CLUB_EMAIL_FROM_URL;
+        clubSelect.disabled = true;
       }
+    } else {
+      console.warn('⚠️ clubId inválido o no encontrado. Se ignora preselección.');
+    }
+  }
+
+  // 2) GPS automático SOLO si NO hay club fijado por URL
+  if (!CLUB_EMAIL_FROM_URL && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => reverseGeocode(pos.coords.latitude, pos.coords.longitude),
+      (err) => console.warn("⚠️ No se pudo obtener la ubicación automática:", err.message)
     );
   }
 
-  // ==================================================
-  // 📍 Botón "Usar mi ubicación"
-  // ==================================================
+  // Botón "Usar mi ubicación" SOLO si NO hay club fijado por URL
   const botonGPS = document.getElementById("usar-ubicacion");
   if (botonGPS) {
     botonGPS.addEventListener("click", () => {
-      if (navigator.geolocation) {
-        const status = document.getElementById("gps-status");
+      if (CLUB_EMAIL_FROM_URL) return; // no pisar QR
+      if (!navigator.geolocation) return;
 
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-          },
-          (err) => {
-            console.error("Error geolocalización", err);
-          }
-        );
-      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => reverseGeocode(pos.coords.latitude, pos.coords.longitude),
+        (err) => console.error("Error geolocalización", err)
+      );
     });
   }
 
@@ -292,10 +408,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const botonLogout = document.getElementById('logout');
 
   if (email) {
-    // Solo muestro el mail del usuario en la barra nueva
-    if (spanUsuario) {
-      spanUsuario.textContent = email;
-    }
+    if (spanUsuario) spanUsuario.textContent = email;
 
     if (botonLogout) {
       botonLogout.style.display = 'inline';
@@ -307,8 +420,8 @@ window.addEventListener('DOMContentLoaded', () => {
   } else {
     if (spanUsuario) spanUsuario.textContent = 'No has iniciado sesión';
 
-    const formulario = document.getElementById('formulario-busqueda');
-    if (formulario) {
+    const formularioTmp = document.getElementById('formulario-busqueda');
+    if (formularioTmp) {
       const contenedor = document.createElement('div');
       const mensaje = document.createElement('p');
       mensaje.textContent = 'Debes iniciar sesión para ver y reservar turnos.';
@@ -320,154 +433,29 @@ window.addEventListener('DOMContentLoaded', () => {
       botonLogin.onclick = () => (window.location.href = 'login.html');
       contenedor.appendChild(botonLogin);
 
-      formulario.replaceWith(contenedor);
+      formularioTmp.replaceWith(contenedor);
     }
 
     if (window.location.pathname.includes('detalle.html')) {
       alert('Debes iniciar sesión para acceder a esta página.');
       window.location.href = 'login.html';
-      return; // evitamos seguir ejecutando en detalle.html sin login
+      return;
     }
   }
 
   // --- Carga de provincias/localidades si corresponde ---
-  cargarUbicaciones();
+  await cargarUbicaciones();
 
-  // ==================================================
-  // 🧭 Corrección de nombres de provincia
-  // ==================================================
-  function normalizarProvinciaGPS(p) {
-    const t = p.toLowerCase();
-
-    if (t.includes("buenos aires") && t.includes("provincia")) return "Buenos Aires";
-    if (t.includes("ciudad autónoma") || t.includes("caba") || t.includes("capital federal")) return "CABA";
-    if (t.includes("cordoba")) return "Córdoba";
-    if (t.includes("neuquen")) return "Neuquén";
-    if (t.includes("rio negro")) return "Río Negro";
-    if (t.includes("misiones")) return "Misiones";
-
-    // Por defecto, devolver nombre como está pero capitalizado
-    return p.replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-
-  // ==================================================
-  // 🌍 Reverse Geocoding → Nominatim (OpenStreetMap)
-  // ==================================================
-  async function reverseGeocode(lat, lon) {
-    try {
-      const status = document.getElementById("gps-status");
-
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
-
-      const res = await fetch(url, {
-        headers: { "User-Agent": "CanchaLibre/1.0" }
-      });
-
-      const data = await res.json();
-      if (!data.address) return;
-
-      const provinciaRAW = data.address.state || "";
-      const localidadRAW =
-        data.address.town ||
-        data.address.city ||
-        data.address.village ||
-        data.address.suburb ||
-        "";
-
-      const provincia = normalizarProvinciaGPS(provinciaRAW);
-      const localidad = localidadRAW;
-
-      console.log("📌 Provincia detectada:", provincia);
-      console.log("📌 Localidad detectada:", localidad);
-
-      if (provincia && localidad) {
-        autocompletarProvinciaLocalidad(provincia, localidad);
-      }
-    } catch (err) {
-      console.error("❌ Error en reverse geocoding:", err);
-      const status = document.getElementById("gps-status");
-    }
-  }
-
-  // ==================================================
-  // 🧭 Autocompletar selects según GPS
-  // ==================================================
-  async function autocompletarProvinciaLocalidad(provincia, localidad) {
-    const selProv = document.getElementById("provincia");
-    const selLoc = document.getElementById("localidad");
-
-    if (!selProv || !selLoc) return;
-
-    console.log("🎯 Intentando autocompletar:", provincia, localidad);
-
-    // Si viene club por URL, NO autocompletamos por GPS (para no pisar el flujo del QR)
-    if (CLUB_ID_FROM_URL) {
-      console.log("🔒 Club fijo por URL detectado. Se omite autocompletado por GPS.");
-      // Intento setear el club directamente si el select ya existe
-      const clubSelect = document.getElementById('club');
-      if (clubSelect) {
-        clubSelect.value = CLUB_ID_FROM_URL;
-        clubSelect.disabled = true;
-      }
-      return;
-    }
-
-    // Esperar a que cargarUbicaciones() termine
-    let intentos = 0;
-    const esperar = setInterval(() => {
-      intentos++;
-
-      // Provincias cargadas correctamente → continuar
-      if (selProv.options.length > 1) {
-        clearInterval(esperar);
-        seleccionarProvLoc();
-      }
-
-      // Tiempo máximo de espera (4 segundos)
-      if (intentos > 20) {
-        clearInterval(esperar);
-        console.warn("⏳ Timeout esperando carga de provincias");
-      }
-    }, 200);
-
-    function seleccionarProvLoc() {
-      // Seleccionar la provincia
-      for (let opt of selProv.options) {
-        if (opt.text.toLowerCase() === provincia.toLowerCase()) {
-          selProv.value = opt.value;
-          break;
-        }
-      }
-
-      // Disparar carga de localidades
-      selProv.dispatchEvent(new Event("change"));
-
-      // Esperar 300ms a que se carguen las localidades
-      setTimeout(() => {
-        for (let opt of selLoc.options) {
-          if (opt.text.toLowerCase() === localidad.toLowerCase()) {
-            selLoc.value = opt.value;
-            break;
-          }
-        }
-
-        // Disparar carga de clubes
-        selLoc.dispatchEvent(new Event("change"));
-      }, 300);
-    }
+  // Si el club vino por QR, intento fijar el select incluso después de cargar ubicaciones
+  const clubSelectInit = document.getElementById('club');
+  if (CLUB_EMAIL_FROM_URL && clubSelectInit) {
+    clubSelectInit.value = CLUB_EMAIL_FROM_URL;
+    clubSelectInit.disabled = true;
   }
 
   // --- Buscador de turnos (index.html) ---
   const formulario = document.getElementById('formulario-busqueda');
   const resultados = document.getElementById('resultados');
-
-  // ✅ Si viene club por URL, lo seteo apenas exista el select
-  // (y lo dejo fijo para que no lo cambien)
-  const clubSelectInit = document.getElementById('club');
-  if (CLUB_ID_FROM_URL && clubSelectInit) {
-    clubSelectInit.value = CLUB_ID_FROM_URL;
-    clubSelectInit.disabled = true;
-  }
 
   if (formulario && resultados) {
     formulario.addEventListener('submit', async (event) => {
@@ -479,13 +467,12 @@ window.addEventListener('DOMContentLoaded', () => {
       const provinciaSeleccionada = document.getElementById('provincia')?.value || '';
       const localidadSeleccionada = document.getElementById('localidad')?.value || '';
 
-      // ✅ Si viene club por URL, prioriza ese valor
-      const clubSeleccionado = CLUB_ID_FROM_URL || (document.getElementById('club')?.value || '');
+      // ✅ Prioridad: club fijado por URL (QR)
+      const clubSeleccionado = CLUB_EMAIL_FROM_URL || (document.getElementById('club')?.value || '');
 
       resultados.innerHTML = '';
 
       try {
-        // Trae turnos (con provincia/localidad como filtros de backend)
         const respuesta = await fetch(
           `https://api.canchalibre.ar/turnos-generados?fecha=${encodeURIComponent(fechaSeleccionada)}&provincia=${encodeURIComponent(provinciaSeleccionada)}&localidad=${encodeURIComponent(localidadSeleccionada)}&club=${encodeURIComponent(clubSeleccionado)}`
         );
@@ -495,7 +482,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const clubes = await obtenerClubes();
 
-        // Filtro en frontend
         const ahora = new Date();
         const turnosFiltrados = turnos.filter((turno) => {
           const turnoDateTime = new Date(`${turno.fecha}T${turno.hora}`);
@@ -505,13 +491,12 @@ window.addEventListener('DOMContentLoaded', () => {
           const noReservadoOK = !turno.usuarioReservado;
           const futuroOK = turnoDateTime >= ahora;
 
-          // ✅ Nuevo: filtrar por club si se seleccionó uno
+          // ✅ Filtrar por club si corresponde (email)
           const clubOK = !clubSeleccionado || turno.club === clubSeleccionado;
 
           return deporteOK && fechaOK && horaOK && noReservadoOK && futuroOK && clubOK;
         });
 
-        // Orden por club destacado
         const turnosOrdenados = ordenarTurnosPorDestacado(turnosFiltrados, clubes);
 
         if (turnosOrdenados.length > 0) {
@@ -534,7 +519,7 @@ window.addEventListener('DOMContentLoaded', () => {
               <p>Duración: ${formatDuracion(turno.duracionTurno)}</p>
               <button onclick="guardarTurnoYRedirigir(
                 '${turno.canchaId}',
-                '${turno.club}',   // 👈 acá siempre va el EMAIL del club
+                '${turno.club}',
                 '${turno.deporte}',
                 '${turno.fecha}',
                 '${turno.hora}',
@@ -581,7 +566,6 @@ window.addEventListener('DOMContentLoaded', () => {
           <p>Duración: ${formatDuracion(turnoGuardado.duracionTurno)}</p>
         `;
 
-        // Ocultar pago online si el club no tiene MP configurado
         const selectPago = document.getElementById('metodo-pago');
         if (selectPago && !club?.mercadoPagoAccessToken) {
           const opcionOnline = selectPago.querySelector('option[value="online"]');
@@ -616,9 +600,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (botonConfirmar) {
         botonConfirmar.addEventListener('click', async function () {
           const usuarioEmail = localStorage.getItem('usuarioLogueado');
-          const metodoPago = document.getElementById('metodo-pago')?.value || 'club';
 
-          // 🆕 NUEVO FLUJO: reserva pendiente con confirmación por email
           try {
             const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
               method: 'POST',
@@ -627,7 +609,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 canchaId: sanitizeHTML(turnoGuardado.canchaId),
                 fecha: sanitizeHTML(turnoGuardado.fecha),
                 hora: sanitizeHTML(turnoGuardado.hora),
-                usuarioId: null, // si más adelante tenés el ID del usuario logueado, podés pasarlo acá
+                usuarioId: null,
                 email: sanitizeHTML(usuarioEmail)
               })
             });
@@ -657,7 +639,6 @@ async function obtenerUbicacion() {
   try {
     const { Geolocation } = Capacitor.Plugins;
 
-    // Pedir permisos si no están otorgados
     await Geolocation.requestPermissions();
 
     const pos = await Geolocation.getCurrentPosition({
@@ -666,6 +647,7 @@ async function obtenerUbicacion() {
 
     console.log("📍 Ubicación obtenida:", pos);
 
+    // ✅ usa reverseGeocode global
     reverseGeocode(pos.coords.latitude, pos.coords.longitude);
 
   } catch (err) {
