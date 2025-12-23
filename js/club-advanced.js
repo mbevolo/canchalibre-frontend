@@ -23,17 +23,131 @@ document.addEventListener('DOMContentLoaded', async () => {
   let editandoCanchaId = null;
   let clubData = null;
 
-  // ==========================
-  // Helpers internos
-  // ==========================
+  if (!nombreClub || !clubEmail) {
+    alert('Debes iniciar sesión como club.');
+    window.location.href = 'login-club.html';
+    return;
+  }
+
+  // ============================
+  // Helpers
+  // ============================
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   // ============================================
-  // === BLOQUE DESTACAR CLUB ===
-  // (lo dejo declarado arriba para poder llamarlo cuando ya tengamos clubData)
+  // 🔗 Link + QR del buscador (para compartir)
   // ============================================
+  function initLinkYQRBuscadorClub() {
+    const inputLink = document.getElementById('club-link-buscador');
+    const btnCopiar = document.getElementById('btn-copiar-link-buscador');
+    const btnGenerarQR = document.getElementById('btn-generar-qr-buscador');
+    const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
+    const contQR = document.getElementById('qr-buscador');
+
+    // Si este panel no tiene el bloque, no hacemos nada
+    if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
+
+    // clubId: lo guardás en login-club.js como localStorage.setItem('clubId', data.clubId)
+    const clubId = (localStorage.getItem('clubId') || '').trim();
+    if (!clubId) {
+      inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
+      btnCopiar.disabled = true;
+      btnGenerarQR.disabled = true;
+      btnDescargarQR.disabled = true;
+      return;
+    }
+
+    // Armamos el link FINAL que abre el buscador con club fijo
+    const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
+    inputLink.value = link;
+
+    // ---- Copiar link
+    btnCopiar.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch (e) {
+        // fallback viejo
+        inputLink.select();
+        document.execCommand('copy');
+      }
+      // sin alert (si querés feedback visual lo hacemos con un texto chico en pantalla)
+    });
+
+    // ---- Generar QR
+    let ultimoQRDataUrl = null;
+
+    function generarDataUrlDesdeCanvas(canvas) {
+      try {
+        return canvas.toDataURL('image/png');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // (Opcional) Logo centrado (si existe en el HTML)
+    const qrLogo = document.getElementById('qr-logo-centro');
+
+    btnGenerarQR.addEventListener('click', () => {
+      // Validar librería
+      if (typeof QRCode === 'undefined') {
+        alert('❌ No se pudo cargar la librería de QR. Revisá que agregaste qrcode.min.js en el HTML.');
+        return;
+      }
+
+      // Limpiar QR anterior
+      contQR.innerHTML = '';
+      ultimoQRDataUrl = null;
+      btnDescargarQR.disabled = true;
+
+      // oculto logo mientras regenera (prolijidad)
+      if (qrLogo) qrLogo.style.display = 'none';
+
+      // Crear QR
+      new QRCode(contQR, {
+        text: link,
+        width: 220,
+        height: 220,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // qrcodejs a veces crea <img> o <canvas>, esperamos un tick
+      setTimeout(() => {
+        const img = contQR.querySelector('img');
+        const canvas = contQR.querySelector('canvas');
+
+        if (img && img.src) {
+          ultimoQRDataUrl = img.src;
+        } else if (canvas) {
+          ultimoQRDataUrl = generarDataUrlDesdeCanvas(canvas);
+        }
+
+        // mostrar logo si existe
+        if (qrLogo) qrLogo.style.display = 'block';
+
+        // ✅ NO mostramos popup "QR generado"
+        // Solo habilitamos el botón de descarga si se pudo preparar el dataURL
+        if (ultimoQRDataUrl) {
+          btnDescargarQR.disabled = false;
+        }
+      }, 80);
+    });
+
+    // ---- Descargar QR (PNG)
+    btnDescargarQR.addEventListener('click', () => {
+      if (!ultimoQRDataUrl) return;
+
+      const a = document.createElement('a');
+      a.href = ultimoQRDataUrl;
+      a.download = `qr-canchalibre-club-${clubId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+
+  // === BLOQUE DESTACAR CLUB ===
   async function renderBloqueDestacar() {
     const bloque = document.getElementById('bloque-destacar-club');
     if (!bloque) return;
@@ -149,18 +263,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // ==========================
-  // Seguridad login
-  // ==========================
-  if (!nombreClub || !clubEmail) {
-    alert('Debes iniciar sesión como club.');
-    window.location.href = 'login-club.html';
-    return;
-  }
-
-  // ==========================
+  // ============================
   // Cargar datos club
-  // ==========================
+  // ============================
   try {
     const resClub = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
     clubData = await resClub.json();
@@ -177,17 +282,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Si estamos en la sección de edición de datos (mis-datos.html)
-    const nombreInput = document.getElementById('nombreClub');
-    const telefonoInput = document.getElementById('telefonoClub');
-    const emailInput = document.getElementById('emailClub');
+    const nombreInputEdit = document.getElementById('nombreClub');
+    const telefonoInputEdit = document.getElementById('telefonoClub');
+    const emailInputEdit = document.getElementById('emailClub');
     const latitudInput = document.getElementById('latitudClub');
     const longitudInput = document.getElementById('longitudClub');
     const direccionInput = document.getElementById('direccionClub');
 
-    if (nombreInput && telefonoInput && emailInput) {
-      nombreInput.value = clubData.nombre || '';
-      telefonoInput.value = clubData.telefono || '';
-      emailInput.value = clubData.email || '';
+    if (nombreInputEdit && telefonoInputEdit && emailInputEdit) {
+      nombreInputEdit.value = clubData.nombre || '';
+      telefonoInputEdit.value = clubData.telefono || '';
+      emailInputEdit.value = clubData.email || '';
 
       if (direccionInput) direccionInput.value = clubData.direccion || '';
       if (latitudInput) latitudInput.value = clubData.latitud || '';
@@ -199,162 +304,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('❌ Error al obtener datos del club:', err);
   }
 
-  // Render destaque (con clubData ya cargado)
+  // Render destaque + init QR/link
   await renderBloqueDestacar();
+  initLinkYQRBuscadorClub();
 
-  // ============================================
-  // 🔗 Link + QR del buscador (para compartir)
-  // + Auto-generar QR al abrir la pestaña (PASO 2)
-  // ============================================
-  (function initLinkYQRBuscadorClub() {
-    const inputLink = document.getElementById('club-link-buscador');
-    const btnCopiar = document.getElementById('btn-copiar-link-buscador');
-    const btnGenerarQR = document.getElementById('btn-generar-qr-buscador');
-    const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
-    const contQR = document.getElementById('qr-buscador');
-
-    // Si este panel no tiene el bloque, no hacemos nada
-    if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
-
-    // clubId: lo guardás en login-club.js como localStorage.setItem('clubId', data.clubId)
-    const clubId = (localStorage.getItem('clubId') || '').trim();
-    if (!clubId) {
-      inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
-      btnCopiar.disabled = true;
-      btnGenerarQR.disabled = true;
-      btnDescargarQR.disabled = true;
-      return;
-    }
-
-    // Armamos el link FINAL que abre el buscador con club fijo
-    // (tu frontend ya lo lee con ?clubId=...)
-    const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
-    inputLink.value = link;
-
-    // ---- Copiar link
-    btnCopiar.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(link);
-        alert('✅ Link copiado');
-      } catch (e) {
-        // fallback viejo
-        inputLink.select();
-        document.execCommand('copy');
-        alert('✅ Link copiado');
-      }
-    });
-
-    // ---- Generar QR
-    let ultimoQRDataUrl = null;
-
-    function generarDataUrlDesdeCanvas(canvas) {
-      try {
-        return canvas.toDataURL('image/png');
-      } catch (e) {
-        return null;
-      }
-    }
-
-    // ✅ Logo centrado (superpuesto por CSS)
-    const qrLogo = document.getElementById('qr-logo-centro');
-
-    btnGenerarQR.addEventListener('click', () => {
-      // Validar librería
-      if (typeof QRCode === 'undefined') {
-        alert('❌ No se pudo cargar la librería de QR. Revisá que agregaste qrcode.min.js en el HTML.');
-        return;
-      }
-
-      // Limpiar QR anterior
-      contQR.innerHTML = '';
-      ultimoQRDataUrl = null;
-      btnDescargarQR.disabled = true;
-
-      // ✅ oculto logo mientras regenera (por prolijidad)
-      if (qrLogo) qrLogo.style.display = 'none';
-
-      // Crear QR
-      new QRCode(contQR, {
-        text: link,
-        width: 220,
-        height: 220,
-        correctLevel: QRCode.CorrectLevel.H // ✅ tolera el logo en el centro
-      });
-
-      // qrcodejs a veces crea <img> o <canvas>, esperamos un tick
-      setTimeout(() => {
-        const img = contQR.querySelector('img');
-        const canvas = contQR.querySelector('canvas');
-
-        if (img && img.src) {
-          ultimoQRDataUrl = img.src;
-        } else if (canvas) {
-          ultimoQRDataUrl = generarDataUrlDesdeCanvas(canvas);
-        }
-
-        // ✅ mostrar logo una vez generado el QR (queda centrado por CSS)
-        if (qrLogo) qrLogo.style.display = 'block';
-
-        if (ultimoQRDataUrl) {
-          btnDescargarQR.disabled = false;
-          alert('✅ QR generado');
-        } else {
-          alert('⚠️ QR generado pero no se pudo preparar la descarga (igual se ve en pantalla).');
-        }
-      }, 80);
-    });
-
-    // ---- Descargar QR (PNG)
-    btnDescargarQR.addEventListener('click', () => {
-      if (!ultimoQRDataUrl) return;
-
-      const a = document.createElement('a');
-      a.href = ultimoQRDataUrl;
-      a.download = `qr-canchalibre-club-${clubId}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
-
-    // ✅ PASO 2: Auto-generar QR al abrir la pestaña "Compartir / QR"
-    // (no regenera si ya hay un QR generado para este link)
-    let yaGeneroAuto = false;
-    const compartirTabBtn = document.getElementById('compartir-tab');
-    if (compartirTabBtn) {
-      compartirTabBtn.addEventListener('shown.bs.tab', () => {
-        // Siempre aseguramos que el input tenga el link
-        inputLink.value = link;
-
-        // Si todavía no generó el QR automáticamente, lo hace
-        if (!yaGeneroAuto) {
-          btnGenerarQR.click();
-          yaGeneroAuto = true;
-        }
-      });
-    }
-  })();
-
-  // ==========================
+  // ============================
   // Cerrar sesión
-  // ==========================
+  // ============================
   const btnCerrar = document.getElementById('cerrar-sesion');
   if (btnCerrar) {
     btnCerrar.addEventListener('click', () => {
       localStorage.removeItem('clubNombre');
       localStorage.removeItem('clubEmail');
+      localStorage.removeItem('clubId');
       window.location.href = 'login-club.html';
     });
   }
 
-  // ==========================
-  // Mapa (solo si existe)
-  // ==========================
+  // ============================
+  // Mapa (solo si existe #map)
+  // ============================
   if (document.getElementById('map')) {
-    if (window._map) {
-      window._map.remove();
-    }
+    if (window._map) window._map.remove();
     window._map = L.map('map').setView([-34.6, -58.38], 13);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window._map);
 
     let marker;
@@ -378,10 +350,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // ============================
+  // Guardar MP Token (si existe)
+  // ============================
   const btnGuardarToken = document.getElementById('btn-guardar-access-token');
   if (btnGuardarToken) {
     btnGuardarToken.addEventListener('click', async () => {
-      const token = document.getElementById('input-access-token')?.value?.trim();
+      const token = document.getElementById('input-access-token').value.trim();
       if (!token) return alert('Debes ingresar el Access Token');
 
       const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/access-token`, {
@@ -391,17 +366,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const data = await res.json();
-      const msg = document.getElementById('mensaje-access-token');
-      if (msg) msg.textContent = data.mensaje || data.error;
+      document.getElementById('mensaje-access-token').textContent = data.mensaje || data.error;
     });
   }
 
-  // ==========================
-  // Variables / Modales
-  // ==========================
+  // ============================
+  // Canchas / Agenda / Reservas
+  // ============================
   const canchasList = document.getElementById('canchas-list');
-  const modal = document.getElementById('modalCancha') ? new bootstrap.Modal(document.getElementById('modalCancha')) : null;
-  const modalTurno = document.getElementById('modalTurno') ? new bootstrap.Modal(document.getElementById('modalTurno')) : null;
+  const modal = new bootstrap.Modal(document.getElementById('modalCancha'));
+  const modalTurno = new bootstrap.Modal(document.getElementById('modalTurno'));
   const turnoDetalleBody = document.getElementById('turno-detalle-body');
   const btnCancelarTurno = document.getElementById('btn-cancelar-turno');
   const btnReservarTurno = document.getElementById('btn-reservar-turno');
@@ -412,24 +386,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const horaDesdeInput = document.getElementById('hora-desde');
   const horaHastaInput = document.getElementById('hora-hasta');
 
-  // 👉 NUEVO: input de duración del turno
   const duracionInput = document.getElementById('duracion-turno');
-
-  // 👉 NUEVO: tarifa nocturna
   const nocturnoDesdeInput = document.getElementById('nocturno-desde');
   const precioNocturnoInput = document.getElementById('precio-nocturno');
 
   const diasCheckboxes = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-
   let turnoSeleccionado = null;
 
   function llenarSelectHoras() {
-    const horaDesdeEl = document.getElementById('hora-desde');
-    const horaHastaEl = document.getElementById('hora-hasta');
+    const hDesde = document.getElementById('hora-desde');
+    const hHasta = document.getElementById('hora-hasta');
+    if (!hDesde || !hHasta) return;
 
-    if (!horaDesdeEl || !horaHastaEl) return; // ⚠️ Salir si no existen en el DOM
-
-    [horaDesdeEl, horaHastaEl].forEach(select => {
+    [hDesde, hHasta].forEach(select => {
       select.innerHTML = '';
       for (let h = 0; h < 24; h++) {
         const hora = `${h.toString().padStart(2, '0')}:00`;
@@ -442,32 +411,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     editandoCanchaId = null;
     llenarSelectHoras();
 
-    // 🔁 Asegurar que los inputs existen
-    const n = document.getElementById('nombre-cancha');
-    const t = document.getElementById('tipo-cancha');
-    const p = document.getElementById('precio-cancha');
-    const hd = document.getElementById('hora-desde');
-    const hh = document.getElementById('hora-hasta');
-    const d = document.getElementById('duracion-turno');
-
-    if (!n || !t || !p || !hd || !hh) {
+    if (!nombreInput || !tipoInput || !precioInput || !horaDesdeInput || !horaHastaInput) {
       alert('Faltan campos del formulario.');
       return;
     }
 
-    n.value = '';
-    t.value = 'futbol';
-    p.value = '';
-    hd.value = '08:00';
-    hh.value = '22:00';
-    if (d) d.value = '60'; // 👉 default 60
+    nombreInput.value = '';
+    tipoInput.value = 'futbol';
+    precioInput.value = '';
+    horaDesdeInput.value = '08:00';
+    horaHastaInput.value = '22:00';
+    if (duracionInput) duracionInput.value = '60';
 
-    diasCheckboxes.forEach(di => {
-      const checkbox = document.getElementById(`dia-${di}`);
+    if (nocturnoDesdeInput) nocturnoDesdeInput.value = '';
+    if (precioNocturnoInput) precioNocturnoInput.value = '';
+
+    diasCheckboxes.forEach(d => {
+      const checkbox = document.getElementById(`dia-${d}`);
       if (checkbox) checkbox.checked = true;
     });
 
-    if (modal) modal.show();
+    modal.show();
   });
 
   async function cargarCanchas() {
@@ -504,7 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // ========== BLOQUE AGENDA UN SOLO SELECT Y COLORES ==========
+  // ========== AGENDA ==========
   async function cargarEventosSemana(canchaId, fechaInicioSemana) {
     const fechaParam = (fechaInicioSemana || '').split('T')[0];
     const res = await fetch(`https://api.canchalibre.ar/turnos-generados?fecha=${fechaParam}`);
@@ -514,24 +478,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const eventos = canchaTurnos.map(t => {
       const [anio, mes, dia] = t.fecha.split('-');
       const fechaHoraTurno = new Date(
-        Number(anio),
-        Number(mes) - 1,
-        Number(dia),
-        Number(t.hora.split(':')[0]),
-        Number(t.hora.split(':')[1])
+        Number(anio), Number(mes) - 1, Number(dia),
+        Number(t.hora.split(':')[0]), Number(t.hora.split(':')[1])
       );
-
       const fechaDelTurno = new Date(Number(anio), Number(mes) - 1, Number(dia));
       fechaDelTurno.setHours(0, 0, 0, 0);
 
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
 
-      let color = 'green'; // Libre futuro
+      let color = 'green';
       if (fechaDelTurno < hoy || (fechaDelTurno.getTime() === hoy.getTime() && fechaHoraTurno < new Date())) {
-        color = t.usuarioReservado ? '#7a7a7a' : '#bcbcbc'; // Reservado pasado o Libre pasado
+        color = t.usuarioReservado ? '#7a7a7a' : '#bcbcbc';
       } else if (t.usuarioReservado) {
-        color = 'red'; // Reservado futuro
+        color = 'red';
       }
 
       return {
@@ -559,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selectCancha = document.getElementById('select-cancha-agenda');
     if (!selectCancha) return;
 
-    // 🔹 Vaciar el select para que no duplique opciones al volver a la pestaña
+    // Evitar duplicados
     selectCancha.innerHTML = '';
 
     const resCanchas = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
@@ -582,6 +542,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const calendarEl = document.getElementById('calendar-unico');
       const cancha = canchas.find(c => c._id === canchaId);
       if (!calendarEl || !cancha) return;
+
+      // Semana actual (lunes)
+      const hoy = new Date();
+      const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+      hoy.setDate(hoy.getDate() - diaSemana);
 
       if (calendarEl._calendar) {
         calendarEl._calendar.destroy();
@@ -615,33 +580,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <button class="btn btn-sm btn-primary" id="detalle-marcar-pagado">Marcar como pagado</button>
               `;
             }
-            if (turnoDetalleBody) {
-              turnoDetalleBody.innerHTML = `
-                <p><strong>Usuario:</strong> ${turno.usuarioReservado}</p>
-                <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-                <p><strong>Hora:</strong> ${turno.hora} hs</p>
-                <p><strong>Estado:</strong> ${turno.pagado ? 'Pagado' : 'Pendiente de pago'}</p>
-                <div class="mt-2">${botonesDetalle}</div>
-              `;
-            }
-            if (btnCancelarTurno) btnCancelarTurno.style.display = 'block';
-            if (btnReservarTurno) btnReservarTurno.style.display = 'none';
+
+            turnoDetalleBody.innerHTML = `
+              <p><strong>Usuario:</strong> ${turno.usuarioReservado}</p>
+              <p><strong>Fecha:</strong> ${fechaFormateada}</p>
+              <p><strong>Hora:</strong> ${turno.hora} hs</p>
+              <p><strong>Estado:</strong> ${turno.pagado ? 'Pagado' : 'Pendiente de pago'}</p>
+              <div class="mt-2">${botonesDetalle}</div>
+            `;
+
+            btnCancelarTurno.style.display = 'block';
+            btnReservarTurno.style.display = 'none';
           } else {
-            if (turnoDetalleBody) {
-              turnoDetalleBody.innerHTML = `
-                <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-                <p><strong>Hora:</strong> ${turno.hora} hs</p>
-                <p>Este turno está libre.</p>
-                <input type="text" id="nombreCliente" placeholder="Nombre del cliente" class="form-control mb-2">
-                <input type="text" id="telefonoCliente" placeholder="Teléfono del cliente" class="form-control mb-2">
-                <input type="email" id="emailCliente" placeholder="Email del cliente" class="form-control mb-2">
-              `;
-            }
-            if (btnCancelarTurno) btnCancelarTurno.style.display = 'none';
-            if (btnReservarTurno) btnReservarTurno.style.display = 'block';
+            turnoDetalleBody.innerHTML = `
+              <p><strong>Fecha:</strong> ${fechaFormateada}</p>
+              <p><strong>Hora:</strong> ${turno.hora} hs</p>
+              <p>Este turno está libre.</p>
+              <input type="text" id="nombreCliente" placeholder="Nombre del cliente" class="form-control mb-2">
+              <input type="text" id="telefonoCliente" placeholder="Teléfono del cliente" class="form-control mb-2">
+              <input type="email" id="emailCliente" placeholder="Email del cliente" class="form-control mb-2">
+            `;
+
+            btnCancelarTurno.style.display = 'none';
+            btnReservarTurno.style.display = 'block';
           }
 
-          if (modalTurno) modalTurno.show();
+          modalTurno.show();
 
           setTimeout(() => {
             const btnPago = document.getElementById('detalle-generar-pago');
@@ -669,16 +633,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert('El usuario no tiene un número válido en su perfil.');
                     return;
                   }
-
                   if (telefono.startsWith('0')) telefono = telefono.slice(1);
                   if (!telefono.startsWith('549')) telefono = '549' + telefono;
 
-                  const nombreClubLocal = clubData?.nombre || reserva.club;
-                  const [A, M, D] = reserva.fecha.split('-');
-                  const fechaF = `${D}/${M}/${A}`;
+                  const nombreClub = clubData?.nombre || reserva.club;
+                  const [aa, mm, dd] = reserva.fecha.split('-');
+                  const fechaF = `${dd}/${mm}/${aa}`;
 
                   const mensajeTexto =
-                    `Hola! Te compartimos el link para pagar tu reserva en ${nombreClubLocal}:\n\n` +
+                    `Hola! Te compartimos el link para pagar tu reserva en ${nombreClub}:\n\n` +
                     `📅 ${fechaF}\n` +
                     `🕐 ${reserva.hora} hs\n` +
                     `🏅 Deporte: ${reserva.deporte}\n\n` +
@@ -719,7 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert(errorData.error || 'No se pudo marcar como pagada.');
                   } else {
                     await cargarReservas();
-                    if (modalTurno) modalTurno.hide();
+                    modalTurno.hide();
                   }
                 } catch (err) {
                   alert('Error al marcar como pagada.');
@@ -737,7 +700,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       calendarEl._calendar = calendar;
 
       calendar.updateSize();
-      calendar.render();
     }
 
     selectCancha.onchange = async function () {
@@ -754,7 +716,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const calendarEl = document.getElementById('calendar-unico');
       if (calendarEl && calendarEl._calendar) {
         calendarEl._calendar.updateSize();
-        calendarEl._calendar.render();
       }
       window.dispatchEvent(new Event('resize'));
     }, 200);
@@ -764,18 +725,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Guardar cancha
   document.getElementById('guardar-cancha')?.addEventListener('click', async () => {
-    const nombre = nombreInput?.value?.trim() || '';
-    const deporte = tipoInput?.value?.trim() || '';
-    const precio = precioInput?.value?.trim() || '';
-    const horaDesde = horaDesdeInput?.value?.trim() || '';
-    const horaHasta = horaHastaInput?.value?.trim() || '';
+    const nombre = nombreInput.value.trim();
+    const deporte = tipoInput.value.trim();
+    const precio = precioInput.value.trim();
+    const horaDesde = horaDesdeInput.value.trim();
+    const horaHasta = horaHastaInput.value.trim();
     const dias = diasCheckboxes.filter(d => document.getElementById(`dia-${d}`)?.checked);
 
-    // 🧹 Limpiar errores visuales previos
+    // limpiar errores previos
     [nombreInput, tipoInput, precioInput, horaDesdeInput, horaHastaInput].forEach(i => {
       if (!i) return;
       i.classList.remove('is-invalid');
-      const msg = i.parentElement?.querySelector?.('.invalid-feedback');
+      const msg = i.parentElement?.querySelector('.invalid-feedback');
       if (msg) msg.remove();
     });
 
@@ -802,8 +763,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       marcarError(precioInput, 'Debe ser un número mayor que 0');
     }
 
-    const desde = horaDesde ? parseInt(horaDesde.split(':')[0]) : null;
-    const hasta = horaHasta ? parseInt(horaHasta.split(':')[0]) : null;
+    const desde = parseInt(horaDesde.split(':')[0]);
+    const hasta = parseInt(horaHasta.split(':')[0]);
     if (horaDesde && horaHasta && hasta <= desde) {
       marcarError(horaHastaInput, '"Hasta" debe ser mayor que "Desde"');
     }
@@ -842,7 +803,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    if (modal) modal.hide();
+    modal.hide();
     await cargarCanchas();
   });
 
@@ -861,19 +822,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const cancha = window._canchaAEditar;
       if (!cancha) return;
 
-      const nombreInput = document.getElementById('nombre-cancha');
-      const tipoInput = document.getElementById('tipo-cancha');
-      const precioInput = document.getElementById('precio-cancha');
-      const horaDesdeInput = document.getElementById('hora-desde');
-      const horaHastaInput = document.getElementById('hora-hasta');
-      const duracionInput = document.getElementById('duracion-turno');
-
-      if (!nombreInput || !tipoInput || !precioInput || !horaDesdeInput || !horaHastaInput) {
-        alert('Faltan campos del formulario.');
-        return;
-      }
-
       editandoCanchaId = cancha._id;
+
       nombreInput.value = cancha.nombre || '';
       tipoInput.value = cancha.deporte || 'futbol';
       precioInput.value = cancha.precio || '';
@@ -881,31 +831,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       horaHastaInput.value = cancha.horaHasta || '22:00';
       if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
-      // 👉 Tarifa nocturna
       if (nocturnoDesdeInput) {
-        nocturnoDesdeInput.value =
-          (cancha.nocturnoDesde !== null && cancha.nocturnoDesde !== undefined)
-            ? String(cancha.nocturnoDesde)
-            : '';
+        nocturnoDesdeInput.value = (cancha.nocturnoDesde !== null && cancha.nocturnoDesde !== undefined)
+          ? String(cancha.nocturnoDesde)
+          : '';
       }
       if (precioNocturnoInput) {
-        precioNocturnoInput.value =
-          (cancha.precioNocturno !== null && cancha.precioNocturno !== undefined)
-            ? String(cancha.precioNocturno)
-            : '';
+        precioNocturnoInput.value = (cancha.precioNocturno !== null && cancha.precioNocturno !== undefined)
+          ? String(cancha.precioNocturno)
+          : '';
       }
 
       diasCheckboxes.forEach(dia => {
         const checkbox = document.getElementById(`dia-${dia}`);
         if (checkbox) {
-          checkbox.checked = cancha.diasDisponibles ? cancha.diasDisponibles.includes(capitalize(dia)) : true;
+          checkbox.checked = cancha.diasDisponibles
+            ? cancha.diasDisponibles.includes(capitalize(dia))
+            : true;
         }
       });
 
       window._canchaAEditar = null;
-    });
+    }, { once: true });
 
-    if (modal) modal.show();
+    modal.show();
   };
 
   // Eliminar cancha
@@ -919,41 +868,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // Reservar/cancelar turnos
+  // Cancelar turno
   btnCancelarTurno?.addEventListener('click', async () => {
     if (turnoSeleccionado && turnoSeleccionado.realId) {
       const confirmar = confirm('¿Estás seguro de que querés cancelar este turno?');
-      if (confirmar) {
-        const res = await fetch(`https://api.canchalibre.ar/turnos/${turnoSeleccionado.realId}/cancelar`, { method: 'PATCH' });
-        if (!res.ok) throw new Error('Error al cancelar turno');
-        if (modalTurno) modalTurno.hide();
+      if (!confirmar) return;
 
-        await cargarReservas();
-        await cargarAgendas();
-      }
+      const res = await fetch(`https://api.canchalibre.ar/turnos/${turnoSeleccionado.realId}/cancelar`, {
+        method: 'PATCH'
+      });
+      if (!res.ok) throw new Error('Error al cancelar turno');
+
+      modalTurno.hide();
+      await cargarReservas();
+      await cargarAgendas();
     }
   });
 
+  // Reservar turno manual
   btnReservarTurno?.addEventListener('click', async () => {
-    const nombreCliente = document.getElementById('nombreCliente')?.value?.trim() || '';
-    const telefonoCliente = document.getElementById('telefonoCliente')?.value?.trim() || '';
-    const emailCliente = document.getElementById('emailCliente')?.value?.trim() || '';
+    const nombreCliente = document.getElementById('nombreCliente')?.value.trim();
+    const telefonoCliente = document.getElementById('telefonoCliente')?.value.trim();
+    const emailCliente = document.getElementById('emailCliente')?.value.trim();
 
     if (!nombreCliente || !telefonoCliente || !emailCliente) {
       return alert('Todos los campos son obligatorios.');
     }
-
-    console.log('📤 Enviando reserva:', {
-      deporte: turnoSeleccionado.deporte,
-      fecha: turnoSeleccionado.fecha,
-      hora: turnoSeleccionado.hora,
-      club: turnoSeleccionado.club,
-      precio: turnoSeleccionado.precio,
-      usuarioReservado: nombreCliente,
-      emailReservado: emailCliente,
-      metodoPago: 'efectivo',
-      canchaId: turnoSeleccionado.canchaId
-    });
 
     const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
       method: 'POST',
@@ -972,21 +912,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (!res.ok) throw new Error('Error al reservar turno');
-    if (modalTurno) modalTurno.hide();
 
+    modalTurno.hide();
     await cargarReservas();
     await cargarAgendas();
   });
 
-  // ========== RESERVAS ==========
-  const reservasList = document.getElementById('reservas-list');
-
+  // ============================
+  // RESERVAS
+  // ============================
   async function cargarReservas() {
-    const reservasListEl = document.getElementById('reservas-list');
+    const reservasList = document.getElementById('reservas-list');
     const historialList = document.getElementById('historial-list');
-    if (!reservasListEl) return;
+    if (!reservasList) return;
 
-    reservasListEl.innerHTML = '';
+    reservasList.innerHTML = '';
     if (historialList) historialList.innerHTML = '';
 
     const res = await fetch(`https://api.canchalibre.ar/reservas/${clubEmail}`);
@@ -998,20 +938,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       let partes;
       if (fecha.includes('-')) {
         partes = fecha.split('-');
-        return new Date(
-          Number(partes[0]),
-          Number(partes[1]) - 1,
-          Number(partes[2]),
-          ...hora.split(':').map(Number)
-        );
+        return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]), ...hora.split(':').map(Number));
       } else if (fecha.includes('/')) {
         partes = fecha.split('/');
-        return new Date(
-          Number(partes[2]),
-          Number(partes[1]) - 1,
-          Number(partes[0]),
-          ...hora.split(':').map(Number)
-        );
+        return new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]), ...hora.split(':').map(Number));
       }
       return null;
     }
@@ -1035,12 +965,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const [anio, mes, dia] = r.fecha.includes('-')
         ? r.fecha.split('-')
         : [r.fecha.split('/')[2], r.fecha.split('/')[1], r.fecha.split('/')[0]];
+
       const fechaFormateada = `${dia}/${mes}/${anio}`;
       const estadoPago = r.pagado ? 'Pagado' : 'Pendiente';
 
       let botones = `<button class="btn btn-sm btn-danger cancelar-reserva me-2" data-id="${r._id}">Cancelar</button>`;
       if (!r.pagado) {
-        botones += `<button class="btn btn-sm btn-success generar-pago" data-id="${r._id}">Generar link de pago</button>`;
+        botones += `<button class="btn btn-sm btn-success generar-pago me-2" data-id="${r._id}">Generar link de pago</button>`;
         botones += `<button class="btn btn-sm btn-primary marcar-pagada" data-id="${r._id}">Marcar como pagada</button>`;
       }
 
@@ -1057,15 +988,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (telefonoWa) {
         htmlTelefono = `
           📱 <a href="https://wa.me/${telefonoWa}" target="_blank" style="text-decoration: none;">
-            ${telefonoReserva}
-            ${iconoWhatsApp}
+            ${telefonoReserva} ${iconoWhatsApp}
           </a>
         `;
       } else {
         htmlTelefono = `
           📱 <span title="No hay teléfono cargado" style="opacity: 0.6;">
-            (sin teléfono)
-            ${iconoWhatsApp}
+            (sin teléfono) ${iconoWhatsApp}
           </span>
         `;
       }
@@ -1083,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td>${estadoPago}</td>
         <td>${botones}</td>
       `;
-      reservasListEl.appendChild(row);
+      reservasList.appendChild(row);
     });
 
     if (historialList) {
@@ -1106,18 +1035,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    reservasListEl.querySelectorAll('.cancelar-reserva').forEach(btn => {
+    // Acciones
+    reservasList.querySelectorAll('.cancelar-reserva').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         const confirmar = confirm('¿Estás seguro de que querés cancelar esta reserva?');
-        if (confirmar) {
-          await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
-          await cargarReservas();
-        }
+        if (!confirmar) return;
+        await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
+        await cargarReservas();
       });
     });
 
-    reservasListEl.querySelectorAll('.generar-pago').forEach(btn => {
+    reservasList.querySelectorAll('.generar-pago').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
@@ -1143,14 +1072,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (telefono.startsWith('0')) telefono = telefono.slice(1);
           if (!telefono.startsWith('549')) telefono = '549' + telefono;
 
-          const nombreClubLocal = clubData?.nombre || reserva.club;
+          const nombreClub = clubData?.nombre || reserva.club;
           const [anio, mes, dia] = reserva.fecha.includes('-')
             ? reserva.fecha.split('-')
             : [reserva.fecha.split('/')[2], reserva.fecha.split('/')[1], reserva.fecha.split('/')[0]];
           const fechaFormateada = `${dia}/${mes}/${anio}`;
 
           const mensajeTexto =
-            `Hola! Te compartimos el link para pagar tu reserva en ${nombreClubLocal}:\n\n` +
+            `Hola! Te compartimos el link para pagar tu reserva en ${nombreClub}:\n\n` +
             `📅 ${fechaFormateada}\n` +
             `🕐 ${reserva.hora} hs\n` +
             `🏅 Deporte: ${reserva.deporte}\n\n` +
@@ -1176,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    reservasListEl.querySelectorAll('.marcar-pagada').forEach(btn => {
+    reservasList.querySelectorAll('.marcar-pagada').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         const confirmar = confirm('¿Confirmás que el usuario pagó en efectivo u otro medio?');
@@ -1199,21 +1128,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    if (futuras.length === 0) {
-      reservasListEl.innerHTML = '<tr><td colspan="6">No hay reservas futuras.</td></tr>';
-    }
-    if (historialList && pasadas.length === 0) {
-      historialList.innerHTML = '<tr><td colspan="5">No hay reservas pasadas.</td></tr>';
-    }
+    if (futuras.length === 0) reservasList.innerHTML = '<tr><td colspan="6">No hay reservas futuras.</td></tr>';
+    if (historialList && pasadas.length === 0) historialList.innerHTML = '<tr><td colspan="5">No hay reservas pasadas.</td></tr>';
   }
 
   await cargarReservas();
 
-  // === CARGAR PROVINCIAS Y LOCALIDADES ===
+  // ============================
+  // Provincias/Localidades (Mis Datos)
+  // ============================
   async function cargarProvinciasYLocalidades() {
     const provinciaSelect = document.getElementById('provinciaClub');
     const localidadSelect = document.getElementById('localidadClub');
-
     if (!provinciaSelect || !localidadSelect) return;
 
     localidadSelect.disabled = true;
@@ -1259,44 +1185,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Error al cargar provincias y localidades:', error);
     }
 
-    // === Guardar datos editados del club ===
-    document.getElementById('form-editar-club')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // Guardar datos editados del club
+    const formEditar = document.getElementById('form-editar-club');
+    if (formEditar) {
+      formEditar.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-      const nombre = document.getElementById('nombreClub')?.value || '';
-      const telefono = document.getElementById('telefonoClub')?.value || '';
-      const provincia = document.getElementById('provinciaClub')?.value || '';
-      const localidad = document.getElementById('localidadClub')?.value || '';
+        const nombre = document.getElementById('nombreClub').value;
+        const telefono = document.getElementById('telefonoClub').value;
+        const provincia = document.getElementById('provinciaClub').value;
+        const localidad = document.getElementById('localidadClub').value;
 
-      const body = { nombre, telefono, provincia, localidad };
+        const body = { nombre, telefono, provincia, localidad };
 
-      try {
-        const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+        try {
+          const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
 
-        const data = await res.json();
-        if (res.ok) {
-          document.getElementById('alerta-edicion-club')?.classList.remove('d-none');
-        } else {
-          alert(data.error || 'Error al actualizar los datos');
+          const data = await res.json();
+          if (res.ok) {
+            document.getElementById('alerta-edicion-club')?.classList.remove('d-none');
+          } else {
+            alert(data.error || 'Error al actualizar los datos');
+          }
+        } catch (err) {
+          console.error('❌ Error al guardar datos del club:', err);
+          alert('Error al guardar datos del club');
         }
-      } catch (err) {
-        console.error('❌ Error al guardar datos del club:', err);
-        alert('Error al guardar datos del club');
-      }
-    });
+      });
+    }
   }
 
   await cargarProvinciasYLocalidades();
 
-  // === REDIRECCIÓN A MIS DATOS ===
+  // Redirección a Mis Datos
   document.getElementById('btn-mis-datos')?.addEventListener('click', () => {
     window.location.href = 'mis-datos.html';
   });
 
+  // Reservas hoy (Info)
   async function cargarReservasHoy() {
     const contenedor = document.getElementById('lista-reservas-hoy');
     if (!contenedor) return;
@@ -1308,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!res.ok) throw new Error('Error al obtener reservas');
       const reservas = await res.json();
 
-      const hoy = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const hoy = new Date().toISOString().slice(0, 10);
       const reservasHoy = reservas.filter(r => r.fecha === hoy);
 
       if (reservasHoy.length === 0) {
@@ -1343,27 +1273,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // === ESCUCHADORES DE CAMBIO DE PESTAÑA ===
+  // Cambios de pestaña
   const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
   tabs.forEach(tab => {
     tab.addEventListener('shown.bs.tab', async event => {
       const id = event.target.id;
 
-      if (id === 'reservas-tab') {
-        await cargarReservas();
-      }
-
-      if (id === 'canchas-tab') {
-        await cargarCanchas();
-      }
+      if (id === 'reservas-tab') await cargarReservas();
+      if (id === 'canchas-tab') await cargarCanchas();
     });
   });
 
-  // === CARGA INICIAL SEGÚN PESTAÑA VISIBLE ===
+  // Carga inicial según pestaña visible
   if (document.querySelector('#canchasTab')?.classList.contains('show')) {
     await cargarCanchas();
   }
-
   if (document.querySelector('#reservasTab')?.classList.contains('show')) {
     await cargarReservas();
   }
