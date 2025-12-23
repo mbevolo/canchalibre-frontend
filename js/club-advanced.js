@@ -37,115 +37,175 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ============================================
-  // 🔗 Link + QR del buscador (para compartir)
-  // ============================================
-  function initLinkYQRBuscadorClub() {
-    const inputLink = document.getElementById('club-link-buscador');
-    const btnCopiar = document.getElementById('btn-copiar-link-buscador');
-    const btnGenerarQR = document.getElementById('btn-generar-qr-buscador');
-    const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
-    const contQR = document.getElementById('qr-buscador');
+// 🔗 Link + QR del buscador (para compartir)
+// ============================================
+function initLinkYQRBuscadorClub() {
+  const inputLink = document.getElementById('club-link-buscador');
+  const btnCopiar = document.getElementById('btn-copiar-link-buscador');
+  const btnGenerarQR = document.getElementById('btn-generar-qr-buscador');
+  const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
+  const contQR = document.getElementById('qr-buscador');
 
-    // Si este panel no tiene el bloque, no hacemos nada
-    if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
+  // Si este panel no tiene el bloque, no hacemos nada
+  if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
 
-    // clubId: lo guardás en login-club.js como localStorage.setItem('clubId', data.clubId)
-    const clubId = (localStorage.getItem('clubId') || '').trim();
-    if (!clubId) {
-      inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
-      btnCopiar.disabled = true;
-      btnGenerarQR.disabled = true;
-      btnDescargarQR.disabled = true;
+  const clubId = (localStorage.getItem('clubId') || '').trim();
+  if (!clubId) {
+    inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
+    btnCopiar.disabled = true;
+    btnGenerarQR.disabled = true;
+    btnDescargarQR.disabled = true;
+    return;
+  }
+
+  const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
+  inputLink.value = link;
+
+  // (Opcional) Logo centrado en pantalla (si existe en el HTML)
+  // ⚠️ Para que también salga en la descarga, lo incrustamos en el canvas
+  const qrLogo = document.getElementById('qr-logo-centro');
+
+  let ultimoQRDataUrl = null;
+
+  // ---- Copiar link (sin alert)
+  btnCopiar.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch (e) {
+      inputLink.select();
+      document.execCommand('copy');
+    }
+  });
+
+  function esperarImagen(img) {
+    return new Promise((resolve) => {
+      if (!img) return resolve(false);
+      if (img.complete && img.naturalWidth > 0) return resolve(true);
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+    });
+  }
+
+  function dibujarLogoEnCanvas(canvas, logoImg) {
+    if (!canvas || !logoImg) return false;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    // Tamaño del logo (ajustable)
+    const logoSize = 52;
+    const padding = 8;
+    const bgSize = logoSize + padding * 2;
+
+    const x = (canvas.width - bgSize) / 2;
+    const y = (canvas.height - bgSize) / 2;
+
+    // Fondo blanco redondeado
+    const r = 10;
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + bgSize, y, x + bgSize, y + bgSize, r);
+    ctx.arcTo(x + bgSize, y + bgSize, x, y + bgSize, r);
+    ctx.arcTo(x, y + bgSize, x, y, r);
+    ctx.arcTo(x, y, x + bgSize, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Dibujar logo centrado
+    const lx = (canvas.width - logoSize) / 2;
+    const ly = (canvas.height - logoSize) / 2;
+
+    try {
+      ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  btnGenerarQR.addEventListener('click', async () => {
+    if (typeof QRCode === 'undefined') {
+      alert('❌ No se pudo cargar la librería de QR. Revisá qrcode.min.js');
       return;
     }
 
-    // Armamos el link FINAL que abre el buscador con club fijo
-    const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
-    inputLink.value = link;
+    contQR.innerHTML = '';
+    ultimoQRDataUrl = null;
+    btnDescargarQR.disabled = true;
 
-    // ---- Copiar link
-    btnCopiar.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(link);
-      } catch (e) {
-        // fallback viejo
-        inputLink.select();
-        document.execCommand('copy');
-      }
-      // sin alert (si querés feedback visual lo hacemos con un texto chico en pantalla)
+    // Generar QR (qrcodejs crea <img> o <canvas>)
+    new QRCode(contQR, {
+      text: link,
+      width: 220,
+      height: 220,
+      correctLevel: QRCode.CorrectLevel.H
     });
 
-    // ---- Generar QR
-    let ultimoQRDataUrl = null;
+    // Esperar a que qrcodejs lo inserte
+    setTimeout(async () => {
+      let canvas = contQR.querySelector('canvas');
+      const img = contQR.querySelector('img');
 
-    function generarDataUrlDesdeCanvas(canvas) {
-      try {
-        return canvas.toDataURL('image/png');
-      } catch (e) {
-        return null;
+      // Si generó IMG, la convertimos a canvas
+      if (!canvas && img && img.src) {
+        const ok = await esperarImagen(img);
+        if (!ok) return;
+
+        const c = document.createElement('canvas');
+        c.width = 220;
+        c.height = 220;
+        const ctx = c.getContext('2d');
+
+        try {
+          ctx.drawImage(img, 0, 0, 220, 220);
+          canvas = c;
+        } catch (e) {
+          // Si falla acá, suele ser CORS si la imagen del QR estuviera cross-origin (raro)
+          return;
+        }
       }
-    }
 
-    // (Opcional) Logo centrado (si existe en el HTML)
-    const qrLogo = document.getElementById('qr-logo-centro');
+      if (!canvas) return;
 
-    btnGenerarQR.addEventListener('click', () => {
-      // Validar librería
-      if (typeof QRCode === 'undefined') {
-        alert('❌ No se pudo cargar la librería de QR. Revisá que agregaste qrcode.min.js en el HTML.');
-        return;
+      // ✅ Incrustar logo EN el canvas (para que salga en la descarga)
+      if (qrLogo && qrLogo.tagName === 'IMG') {
+        const okLogo = await esperarImagen(qrLogo);
+        if (okLogo) {
+          // ⚠️ Si el logo es de otro dominio sin CORS, el toDataURL puede fallar.
+          dibujarLogoEnCanvas(canvas, qrLogo);
+        }
       }
 
-      // Limpiar QR anterior
+      // Reemplazar lo que haya por el canvas final (se ve igual en pantalla)
       contQR.innerHTML = '';
-      ultimoQRDataUrl = null;
-      btnDescargarQR.disabled = true;
+      contQR.appendChild(canvas);
 
-      // oculto logo mientras regenera (prolijidad)
-      if (qrLogo) qrLogo.style.display = 'none';
+      // Preparar PNG descargable
+      try {
+        ultimoQRDataUrl = canvas.toDataURL('image/png');
+        btnDescargarQR.disabled = false;
+      } catch (e) {
+        // Esto pasa casi siempre por CORS del logo
+        btnDescargarQR.disabled = true;
+        alert('⚠️ No se pudo preparar la descarga. El logo probablemente viene de otro dominio sin CORS. Usá un logo local (misma web).');
+      }
+    }, 120);
+  });
 
-      // Crear QR
-      new QRCode(contQR, {
-        text: link,
-        width: 220,
-        height: 220,
-        correctLevel: QRCode.CorrectLevel.H
-      });
+  // ---- Descargar QR (PNG) (incluye logo)
+  btnDescargarQR.addEventListener('click', () => {
+    if (!ultimoQRDataUrl) return;
+    const a = document.createElement('a');
+    a.href = ultimoQRDataUrl;
+    a.download = `qr-canchalibre-club-${clubId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+}
 
-      // qrcodejs a veces crea <img> o <canvas>, esperamos un tick
-      setTimeout(() => {
-        const img = contQR.querySelector('img');
-        const canvas = contQR.querySelector('canvas');
-
-        if (img && img.src) {
-          ultimoQRDataUrl = img.src;
-        } else if (canvas) {
-          ultimoQRDataUrl = generarDataUrlDesdeCanvas(canvas);
-        }
-
-        // mostrar logo si existe
-        if (qrLogo) qrLogo.style.display = 'block';
-
-        // ✅ NO mostramos popup "QR generado"
-        // Solo habilitamos el botón de descarga si se pudo preparar el dataURL
-        if (ultimoQRDataUrl) {
-          btnDescargarQR.disabled = false;
-        }
-      }, 80);
-    });
-
-    // ---- Descargar QR (PNG)
-    btnDescargarQR.addEventListener('click', () => {
-      if (!ultimoQRDataUrl) return;
-
-      const a = document.createElement('a');
-      a.href = ultimoQRDataUrl;
-      a.download = `qr-canchalibre-club-${clubId}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
-  }
 
   // === BLOQUE DESTACAR CLUB ===
   async function renderBloqueDestacar() {
