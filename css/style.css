@@ -463,3 +463,32 @@ button:hover, .btn:hover {
 body {
     background: #f4f4f4; /* tonos suaves para que combine */
 }
+/* ===== FIX MOBILE: la imagen del hero no debe tapar la barra superior ===== */
+
+/* La barra debe estar siempre arriba */
+#barra-usuario{
+  position: relative;
+  z-index: 9999;
+}
+
+/* El hero (y su contenido) deben quedar por debajo */
+.hero-header{
+  z-index: 1;
+}
+
+/* El logo NO debe sobresalir y además no debe capturar clicks */
+.hero-logo{
+  max-height: 260px;      /* evita que mida más que el hero */
+  height: auto;           /* mantiene proporción */
+  pointer-events: none;   /* aunque se superponga, no tapa clicks */
+}
+
+/* Ajuste específico para pantallas chicas */
+@media (max-width: 768px){
+  .hero-header{
+    height: 320px;        /* un poco más bajo en mobile */
+  }
+  .hero-logo{
+    max-height: 180px;    /* clave para que no tape arriba */
+  }
+}
