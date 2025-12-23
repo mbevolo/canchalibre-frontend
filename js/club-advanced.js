@@ -60,143 +60,164 @@ function initLinkYQRBuscadorClub() {
   const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
   inputLink.value = link;
 
-  const qrLogo = document.getElementById('qr-logo-centro'); // <img> (ideal: archivo local)
-  let ultimoQRDataUrl = null;
+// ---- Generar QR / Descargar (con logo y sin alerts)
+let ultimoQRDataUrl = null;
 
-  btnCopiar.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-    } catch (e) {
-      inputLink.select();
-      document.execCommand('copy');
-    }
+// Calidad real (descarga) vs tamaño visible (pantalla)
+const QR_SIZE_REAL = 600;   // descargado (más nítido)
+const QR_SIZE_VIEW = 220;   // visto en panel
+
+// Logo (tiene que ser MISMO ORIGEN o data URL para evitar CORS)
+const qrLogo = document.getElementById('qr-logo-centro');
+
+// Cargar imagen (promesa)
+function cargarImagen(imgEl) {
+  return new Promise((resolve, reject) => {
+    if (!imgEl) return reject(new Error('No hay logo'));
+    if (imgEl.complete && imgEl.naturalWidth > 0) return resolve(true);
+    imgEl.onload = () => resolve(true);
+    imgEl.onerror = () => reject(new Error('No se pudo cargar el logo'));
   });
+}
 
-  function esperarImagen(img) {
-    return new Promise((resolve) => {
-      if (!img) return resolve(false);
-      if (img.complete && img.naturalWidth > 0) return resolve(true);
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
+// Dibuja logo centrado + fondo blanco redondeado (para que no "ensucie" el QR)
+function dibujarLogoEnCanvas(canvas, logoImg) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Mejorar nitidez del escalado del logo
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  // Tamaño del logo en el QR (ajustable)
+  const logoSize = Math.round(canvas.width * 0.18); // ~18% del QR
+  const padding = Math.round(logoSize * 0.18);
+  const bgSize = logoSize + padding * 2;
+
+  const x = (canvas.width - bgSize) / 2;
+  const y = (canvas.height - bgSize) / 2;
+
+  // Fondo blanco redondeado
+  const r = Math.round(bgSize * 0.18);
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + bgSize, y, x + bgSize, y + bgSize, r);
+  ctx.arcTo(x + bgSize, y + bgSize, x, y + bgSize, r);
+  ctx.arcTo(x, y + bgSize, x, y, r);
+  ctx.arcTo(x, y, x + bgSize, y, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Dibujar logo centrado
+  const lx = (canvas.width - logoSize) / 2;
+  const ly = (canvas.height - logoSize) / 2;
+  ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
+}
+
+// Convierte el QR generado a un canvas grande, le incrusta logo, y lo muestra a 220px
+async function construirCanvasFinalQR(link) {
+  // qrcodejs genera a veces <img> o <canvas>.
+  const imgQR = contQR.querySelector('img');
+  const canvasQR = contQR.querySelector('canvas');
+
+  // Siempre vamos a terminar con un CANVAS grande
+  const out = document.createElement('canvas');
+  out.width = QR_SIZE_REAL;
+  out.height = QR_SIZE_REAL;
+  const ctx = out.getContext('2d');
+
+  // Fondo blanco
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  if (canvasQR) {
+    // Si ya es canvas, lo escalamos al grande
+    ctx.imageSmoothingEnabled = false; // QR mejor sin smoothing
+    ctx.drawImage(canvasQR, 0, 0, QR_SIZE_REAL, QR_SIZE_REAL);
+  } else if (imgQR && imgQR.src) {
+    // Si es imagen, esperamos a que cargue y la dibujamos
+    await new Promise((resolve, reject) => {
+      if (imgQR.complete && imgQR.naturalWidth > 0) return resolve();
+      imgQR.onload = resolve;
+      imgQR.onerror = reject;
     });
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(imgQR, 0, 0, QR_SIZE_REAL, QR_SIZE_REAL);
+  } else {
+    throw new Error('No se pudo generar el QR');
   }
 
-  function redondeado(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+  // Incrustar logo (si existe)
+  if (qrLogo && qrLogo.tagName === 'IMG') {
+    await cargarImagen(qrLogo);
+
+    // ⚠️ Si el logo viene de OTRO dominio sin CORS, toDataURL falla.
+    // Solución: que el logo sea local: /img/logo-qr.png (mismo dominio).
+    dibujarLogoEnCanvas(out, qrLogo);
   }
 
-  function incrustarLogo(canvas, logoImg) {
-    if (!canvas || !logoImg) return false;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return false;
+  // Mostrar en pantalla en tamaño chico (sin cambiar la calidad real)
+  out.style.width = QR_SIZE_VIEW + 'px';
+  out.style.height = QR_SIZE_VIEW + 'px';
 
-    // ✅ más chico => más escaneable
-    const logoSize = 44;     // antes 52
-    const padding = 7;       // antes 8
-    const bgSize = logoSize + padding * 2;
+  return out;
+}
 
-    const x = (canvas.width - bgSize) / 2;
-    const y = (canvas.height - bgSize) / 2;
+btnGenerarQR.addEventListener('click', async () => {
+  if (typeof QRCode === 'undefined') {
+    alert('❌ No se pudo cargar la librería de QR. Revisá que agregaste qrcode.min.js en el HTML.');
+    return;
+  }
 
-    ctx.save();
-    ctx.fillStyle = '#ffffff';
-    redondeado(ctx, x, y, bgSize, bgSize, 10);
-    ctx.fill();
-    ctx.restore();
+  // No parpadea: no vaciamos y mostramos rápido; armamos final y reemplazamos 1 sola vez
+  btnGenerarQR.disabled = true;
+  btnDescargarQR.disabled = true;
+  ultimoQRDataUrl = null;
 
-    const lx = (canvas.width - logoSize) / 2;
-    const ly = (canvas.height - logoSize) / 2;
+  // Generar QR grande primero
+  contQR.innerHTML = '';
+  new QRCode(contQR, {
+    text: link,
+    width: QR_SIZE_REAL,
+    height: QR_SIZE_REAL,
+    correctLevel: QRCode.CorrectLevel.H
+  });
 
+  // Esperar un toque a que qrcodejs inserte
+  setTimeout(async () => {
     try {
-      ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
-      return true;
+      const canvasFinal = await construirCanvasFinalQR(link);
+
+      // Reemplazar una sola vez (evita "aparece/desaparece")
+      contQR.innerHTML = '';
+      contQR.appendChild(canvasFinal);
+
+      // Preparar descarga (incluye logo)
+      ultimoQRDataUrl = canvasFinal.toDataURL('image/png');
+      btnDescargarQR.disabled = false;
     } catch (e) {
-      return false;
+      console.error(e);
+      // Si falla toDataURL casi seguro es CORS del logo
+      alert('⚠️ No se pudo preparar la descarga con logo. Asegurate de que el logo sea local (mismo dominio) o un dataURL.');
+    } finally {
+      btnGenerarQR.disabled = false;
     }
-  }
+  }, 120);
+});
 
-  btnGenerarQR.addEventListener('click', async () => {
-    if (typeof QRCode === 'undefined') {
-      alert('❌ No se pudo cargar la librería de QR. Revisá qrcode.min.js');
-      return;
-    }
+btnDescargarQR.addEventListener('click', () => {
+  if (!ultimoQRDataUrl) return;
+  const a = document.createElement('a');
+  a.href = ultimoQRDataUrl;
+  a.download = `qr-canchalibre-club-${clubId}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
 
-    // ✅ limpiamos UNA sola vez
-    contQR.innerHTML = '';
-    ultimoQRDataUrl = null;
-    btnDescargarQR.disabled = true;
-
-    // Generar QR
-    new QRCode(contQR, {
-      text: link,
-      width: 220,
-      height: 220,
-      correctLevel: QRCode.CorrectLevel.H
-    });
-
-    // Esperar a que exista canvas/img
-    setTimeout(async () => {
-      let canvas = contQR.querySelector('canvas');
-      const img = contQR.querySelector('img');
-
-      // Si qrcodejs generó <img>, convertir a canvas
-      if (!canvas && img && img.src) {
-        const ok = await esperarImagen(img);
-        if (!ok) return;
-
-        const c = document.createElement('canvas');
-        c.width = 220;
-        c.height = 220;
-        const ctx = c.getContext('2d');
-
-        try {
-          ctx.drawImage(img, 0, 0, 220, 220);
-          canvas = c;
-
-          // ✅ reemplazo SIN “parpadeo”: solo si era img
-          contQR.innerHTML = '';
-          contQR.appendChild(canvas);
-        } catch (e) {
-          return;
-        }
-      }
-
-      if (!canvas) return;
-
-      // Incrustar logo en el canvas final (si existe)
-      if (qrLogo && qrLogo.tagName === 'IMG') {
-        const okLogo = await esperarImagen(qrLogo);
-        if (okLogo) {
-          incrustarLogo(canvas, qrLogo);
-        }
-      }
-
-      // Preparar PNG
-      try {
-        ultimoQRDataUrl = canvas.toDataURL('image/png');
-        btnDescargarQR.disabled = false;
-      } catch (e) {
-        btnDescargarQR.disabled = true;
-        alert('⚠️ No se pudo preparar la descarga. Revisá que el logo sea local (mismo dominio) para evitar CORS.');
-      }
-    }, 180); // un poco más de margen para qrcodejs
-  });
-
-  btnDescargarQR.addEventListener('click', () => {
-    if (!ultimoQRDataUrl) return;
-    const a = document.createElement('a');
-    a.href = ultimoQRDataUrl;
-    a.download = `qr-canchalibre-club-${clubId}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  });
 }
 
 
