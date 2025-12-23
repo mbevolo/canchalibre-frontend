@@ -46,7 +46,6 @@ function initLinkYQRBuscadorClub() {
   const btnDescargarQR = document.getElementById('btn-descargar-qr-buscador');
   const contQR = document.getElementById('qr-buscador');
 
-  // Si este panel no tiene el bloque, no hacemos nada
   if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
 
   const clubId = (localStorage.getItem('clubId') || '').trim();
@@ -61,13 +60,9 @@ function initLinkYQRBuscadorClub() {
   const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
   inputLink.value = link;
 
-  // (Opcional) Logo centrado en pantalla (si existe en el HTML)
-  // ⚠️ Para que también salga en la descarga, lo incrustamos en el canvas
-  const qrLogo = document.getElementById('qr-logo-centro');
-
+  const qrLogo = document.getElementById('qr-logo-centro'); // <img> (ideal: archivo local)
   let ultimoQRDataUrl = null;
 
-  // ---- Copiar link (sin alert)
   btnCopiar.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -86,34 +81,35 @@ function initLinkYQRBuscadorClub() {
     });
   }
 
-  function dibujarLogoEnCanvas(canvas, logoImg) {
+  function redondeado(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function incrustarLogo(canvas, logoImg) {
     if (!canvas || !logoImg) return false;
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
 
-    // Tamaño del logo (ajustable)
-    const logoSize = 52;
-    const padding = 8;
+    // ✅ más chico => más escaneable
+    const logoSize = 44;     // antes 52
+    const padding = 7;       // antes 8
     const bgSize = logoSize + padding * 2;
 
     const x = (canvas.width - bgSize) / 2;
     const y = (canvas.height - bgSize) / 2;
 
-    // Fondo blanco redondeado
-    const r = 10;
     ctx.save();
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + bgSize, y, x + bgSize, y + bgSize, r);
-    ctx.arcTo(x + bgSize, y + bgSize, x, y + bgSize, r);
-    ctx.arcTo(x, y + bgSize, x, y, r);
-    ctx.arcTo(x, y, x + bgSize, y, r);
-    ctx.closePath();
+    redondeado(ctx, x, y, bgSize, bgSize, 10);
     ctx.fill();
     ctx.restore();
 
-    // Dibujar logo centrado
     const lx = (canvas.width - logoSize) / 2;
     const ly = (canvas.height - logoSize) / 2;
 
@@ -131,11 +127,12 @@ function initLinkYQRBuscadorClub() {
       return;
     }
 
+    // ✅ limpiamos UNA sola vez
     contQR.innerHTML = '';
     ultimoQRDataUrl = null;
     btnDescargarQR.disabled = true;
 
-    // Generar QR (qrcodejs crea <img> o <canvas>)
+    // Generar QR
     new QRCode(contQR, {
       text: link,
       width: 220,
@@ -143,12 +140,12 @@ function initLinkYQRBuscadorClub() {
       correctLevel: QRCode.CorrectLevel.H
     });
 
-    // Esperar a que qrcodejs lo inserte
+    // Esperar a que exista canvas/img
     setTimeout(async () => {
       let canvas = contQR.querySelector('canvas');
       const img = contQR.querySelector('img');
 
-      // Si generó IMG, la convertimos a canvas
+      // Si qrcodejs generó <img>, convertir a canvas
       if (!canvas && img && img.src) {
         const ok = await esperarImagen(img);
         if (!ok) return;
@@ -161,40 +158,36 @@ function initLinkYQRBuscadorClub() {
         try {
           ctx.drawImage(img, 0, 0, 220, 220);
           canvas = c;
+
+          // ✅ reemplazo SIN “parpadeo”: solo si era img
+          contQR.innerHTML = '';
+          contQR.appendChild(canvas);
         } catch (e) {
-          // Si falla acá, suele ser CORS si la imagen del QR estuviera cross-origin (raro)
           return;
         }
       }
 
       if (!canvas) return;
 
-      // ✅ Incrustar logo EN el canvas (para que salga en la descarga)
+      // Incrustar logo en el canvas final (si existe)
       if (qrLogo && qrLogo.tagName === 'IMG') {
         const okLogo = await esperarImagen(qrLogo);
         if (okLogo) {
-          // ⚠️ Si el logo es de otro dominio sin CORS, el toDataURL puede fallar.
-          dibujarLogoEnCanvas(canvas, qrLogo);
+          incrustarLogo(canvas, qrLogo);
         }
       }
 
-      // Reemplazar lo que haya por el canvas final (se ve igual en pantalla)
-      contQR.innerHTML = '';
-      contQR.appendChild(canvas);
-
-      // Preparar PNG descargable
+      // Preparar PNG
       try {
         ultimoQRDataUrl = canvas.toDataURL('image/png');
         btnDescargarQR.disabled = false;
       } catch (e) {
-        // Esto pasa casi siempre por CORS del logo
         btnDescargarQR.disabled = true;
-        alert('⚠️ No se pudo preparar la descarga. El logo probablemente viene de otro dominio sin CORS. Usá un logo local (misma web).');
+        alert('⚠️ No se pudo preparar la descarga. Revisá que el logo sea local (mismo dominio) para evitar CORS.');
       }
-    }, 120);
+    }, 180); // un poco más de margen para qrcodejs
   });
 
-  // ---- Descargar QR (PNG) (incluye logo)
   btnDescargarQR.addEventListener('click', () => {
     if (!ultimoQRDataUrl) return;
     const a = document.createElement('a');
@@ -205,6 +198,7 @@ function initLinkYQRBuscadorClub() {
     a.remove();
   });
 }
+
 
 
   // === BLOQUE DESTACAR CLUB ===
