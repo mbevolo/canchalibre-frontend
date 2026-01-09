@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // 🔸 Ordenar por fecha/hora
-    const sortByDate = (a, b) => toDate(a.fecha, a.hora) - toDate(a.fecha, a.hora);
+    const sortByDate = (a, b) => toDate(a.fecha, a.hora) - toDate(b.fecha, b.hora);
     confirmadasFuturas.sort(sortByDate);
     confirmadasPasadas.sort(sortByDate);
     pendientesFuturas.sort(sortByDate);
