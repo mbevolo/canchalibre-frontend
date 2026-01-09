@@ -1,276 +1,193 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const emailUsuario = localStorage.getItem('usuarioLogueado');
-    if (!emailUsuario) {
-        alert('Debes iniciar sesión.');
-        window.location.href = 'login.html';
-        return;
-    }
+  const emailUsuario = localStorage.getItem('usuarioLogueado');
+  if (!emailUsuario) {
+    alert('Debes iniciar sesión.');
+    window.location.href = 'login.html';
+    return;
+  }
 
-    document.getElementById('info-usuario').textContent = `Estás logueado como: ${emailUsuario}`;
+  document.getElementById('info-usuario').textContent = `Estás logueado como: ${emailUsuario}`;
 
-const btnCerrarSesion = document.getElementById('cerrar-sesion');
-if (btnCerrarSesion) {
+  const btnCerrarSesion = document.getElementById('cerrar-sesion');
+  if (btnCerrarSesion) {
     btnCerrarSesion.addEventListener('click', () => {
-        localStorage.removeItem('usuarioLogueado');
-        window.location.href = 'login.html';
+      localStorage.removeItem('usuarioLogueado');
+      window.location.href = 'login.html';
     });
-}
+  }
 
+  async function cargarDatosUsuario() {
+    try {
+      const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`);
+      const usuario = await res.json();
 
-    async function cargarDatosUsuario() {
-        try {
-            const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`);
-            const usuario = await res.json();
-
-            document.getElementById('nombre').value = usuario.nombre || '';
-            document.getElementById('apellido').value = usuario.apellido || '';
-            document.getElementById('telefono').value = usuario.telefono || '';
-            document.getElementById('email').value = usuario.email || '';
-        } catch (error) {
-            console.error('Error al cargar datos del usuario:', error);
-        }
+      document.getElementById('nombre').value = usuario.nombre || '';
+      document.getElementById('apellido').value = usuario.apellido || '';
+      document.getElementById('telefono').value = usuario.telefono || '';
+      document.getElementById('email').value = usuario.email || '';
+    } catch (error) {
+      console.error('Error al cargar datos del usuario:', error);
     }
+  }
 
-    async function cargarReservas() {
-        try {
-            const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
-            const reservas = await res.json();
+  // =============================
+  // ✅ Render de "reservas pasadas" (compartido)
+  // =============================
+  function renderBtnVerPasadas(contenedor, textoBoton = 'Ver reservas pasadas') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mt-2';
 
-            const contenedor = document.getElementById('reservas-container');
-            contenedor.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.id = 'ver-reservas-pasadas';
+    btn.className = 'btn btn-outline-secondary btn-sm';
+    btn.textContent = textoBoton;
 
-            const ahora = new Date();
-            const reservasFuturas = reservas
-                .filter(r => new Date(`${r.fecha}T${r.hora}`) >= ahora)
-                .sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+    wrapper.appendChild(btn);
+    contenedor.appendChild(wrapper);
 
-            if (reservasFuturas.length === 0) {
-                contenedor.textContent = 'No tenés reservas futuras.';
-                return;
-            }
+    engancharBotonPasadas(); // engancha el click del botón recién creado
+  }
 
-            const tabla = document.createElement('table');
-            tabla.classList.add('table', 'table-striped');
+  function engancharBotonPasadas() {
 
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>Club</th>
-                    <th>Deporte</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>`;
-            tabla.appendChild(thead);
+    // Evita duplicar listeners si se vuelve a renderizar
+    if (btnVerPasadas.dataset.bound === '1') return;
+    btnVerPasadas.dataset.bound = '1';
 
-            const tbody = document.createElement('tbody');
+    btnVerPasadas.addEventListener('click', async () => {
+      try {
+        const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
+        const reservas = await res.json();
+        const contenedor = document.getElementById('reservas-container');
+        contenedor.innerHTML = '';
 
-            reservasFuturas.forEach(r => {
-                const [anio, mes, dia] = r.fecha.split('-');
-                const fechaFormateada = `${dia}/${mes}/${anio}`;
-                const deporteCapitalizado = r.deporte
-                    ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
-                    : '(Pendiente de confirmación)';
+        const ahora = new Date();
+        const pasadas = reservas
+          .filter(r => new Date(`${r.fecha}T${r.hora}`) < ahora)
+          .sort((a, b) => new Date(`${b.fecha}T${b.hora}`) - new Date(`${a.fecha}T${a.hora}`)); // más recientes arriba
 
-                const estadoPago = r.pagado ? 'Pagado' : 'Pendiente';
+        if (pasadas.length === 0) {
+          contenedor.innerHTML = `<div class="alert alert-secondary">No tenés reservas pasadas.</div>`;
+        } else {
+          const tabla = document.createElement('table');
+          tabla.classList.add('table', 'table-striped');
 
-                let botones = `<button class="btn btn-danger btn-sm cancelar-btn me-2" data-id="${r._id}">Cancelar</button>`;
-                if (!r.pagado) {
-                    botones += `<button class="btn btn-success btn-sm generar-pago-usuario" data-id="${r._id}">Pagar online</button>`;
-                }
+          const thead = document.createElement('thead');
+          thead.innerHTML = `
+            <tr>
+              <th>Club</th>
+              <th>Deporte</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Estado</th>
+            </tr>`;
+          tabla.appendChild(thead);
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${r.nombreClub || 'Club desconocido'}</td>
-                    <td>${deporteCapitalizado}</td>
-                    <td>${fechaFormateada}</td>
-                    <td>${r.hora}</td>
-                    <td>${estadoPago}</td>
-                    <td>${botones}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+          const tbody = document.createElement('tbody');
+          pasadas.forEach(r => {
+            const [anio, mes, dia] = r.fecha.split('-');
+            const fechaFormateada = `${dia}/${mes}/${anio}`;
+            const deporteCapitalizado = r.deporte
+              ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
+              : '(Pendiente de confirmación)';
 
-            tabla.appendChild(tbody);
-            contenedor.appendChild(tabla);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${r.nombreClub || 'Club desconocido'}</td>
+              <td>${deporteCapitalizado}</td>
+              <td>${fechaFormateada}</td>
+              <td>${r.hora}</td>
+              <td>${r.pagado ? 'Pagado' : 'Pendiente'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
 
-            // Cancelar reserva
-            contenedor.querySelectorAll('.cancelar-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const id = btn.getAttribute('data-id');
-                    const confirmar = confirm('¿Estás seguro de cancelar esta reserva?');
-                    if (confirmar) {
-                        await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
-                        alert('Reserva cancelada');
-                        cargarReservas();
-                    }
-                });
-            });
-
-            // Pagar reserva
-            contenedor.querySelectorAll('.generar-pago-usuario').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const id = btn.getAttribute('data-id');
-                    try {
-                        const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${id}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-
-                        const data = await res.json();
-                        if (res.ok && data.pagoUrl) {
-                            window.open(data.pagoUrl, '_blank');
-                        } else {
-                            alert(data.error || 'No se pudo generar el link de pago.');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('Error generando el link de pago.');
-                    }
-                });
-            });
-
-        } catch (error) {
-            console.error('Error al cargar reservas del usuario:', error);
-            document.getElementById('reservas-container').textContent = 'Error al cargar reservas.';
+          tabla.appendChild(tbody);
+          contenedor.appendChild(tabla);
         }
-    }
 
-    // =============================
-    // 🔧 Modo lectura / edición en "Mis datos"
-    // =============================
-    const camposUsuario = ['nombre', 'apellido', 'telefono']; // email no se edita
-    const btnEditar = document.getElementById('btn-editar');
-    const btnGuardar = document.getElementById('btn-guardar');
+        // Botón volver a futuras
+        const btnVolver = document.createElement('button');
+        btnVolver.textContent = 'Ver reservas futuras';
+        btnVolver.className = 'btn btn-outline-primary btn-sm mt-2';
+        contenedor.appendChild(btnVolver);
 
-    function modoLectura() {
-        camposUsuario.forEach(id => {
-            const input = document.getElementById(id);
-            if (input) input.disabled = true;
+        btnVolver.addEventListener('click', () => {
+          cargarReservas();
         });
-        const emailInput = document.getElementById('email');
-        if (emailInput) emailInput.disabled = true;
 
-        if (btnEditar) btnEditar.style.display = 'inline-block';
-        if (btnGuardar) btnGuardar.style.display = 'none';
-    }
-
-    function modoEdicion() {
-        camposUsuario.forEach(id => {
-            const input = document.getElementById(id);
-            if (input) input.disabled = false;
-        });
-        const emailInput = document.getElementById('email');
-        if (emailInput) emailInput.disabled = true;
-
-        if (btnEditar) btnEditar.style.display = 'none';
-        if (btnGuardar) btnGuardar.style.display = 'inline-block';
-    }
-
-    if (btnEditar) {
-        btnEditar.addEventListener('click', modoEdicion);
-    }
-
-    // ✅ Guardar cambios de usuario
-    document.getElementById('form-usuario').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const datos = {
-            nombre: document.getElementById('nombre').value.trim(),
-            apellido: document.getElementById('apellido').value.trim(),
-            telefono: document.getElementById('telefono').value.trim()
-        };
-
-        try {
-            const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            const result = await res.json();
-            
-            // 🔙 Volver a modo lectura después de guardar
-            modoLectura();
-        } catch (error) {
-            console.error('Error al actualizar usuario:', error);
-            alert('Error al actualizar los datos.');
-        }
+      } catch (error) {
+        console.error('Error al cargar reservas pasadas:', error);
+        document.getElementById('reservas-container').textContent = 'Error al cargar reservas pasadas.';
+      }
     });
+  }
 
-    const btnVerPasadas = document.getElementById('ver-reservas-pasadas');
-    if (btnVerPasadas) {
-        btnVerPasadas.addEventListener('click', async () => {
-            try {
-                const res = await fetch(`https://api.canchalibre.ar/reservas-usuario/${emailUsuario}`);
-                const reservas = await res.json();
-                const contenedor = document.getElementById('reservas-container');
-                contenedor.innerHTML = '';
 
-                const ahora = new Date();
-                const pasadas = reservas.filter(r => new Date(`${r.fecha}T${r.hora}`) < ahora);
 
-                if (pasadas.length === 0) {
-                    contenedor.textContent = 'No tenés reservas pasadas.';
-                } else {
-                    const tabla = document.createElement('table');
-                    tabla.classList.add('table', 'table-striped');
+  // =============================
+  // 🔧 Modo lectura / edición en "Mis datos"
+  // =============================
+  const camposUsuario = ['nombre', 'apellido', 'telefono']; // email no se edita
+  const btnEditar = document.getElementById('btn-editar');
+  const btnGuardar = document.getElementById('btn-guardar');
 
-                    const thead = document.createElement('thead');
-                    thead.innerHTML = `
-                      <tr>
-                        <th>Club</th>
-                        <th>Deporte</th>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Estado</th>
-                      </tr>`;
-                    tabla.appendChild(thead);
+  function modoLectura() {
+    camposUsuario.forEach(id => {
+      const input = document.getElementById(id);
+      if (input) input.disabled = true;
+    });
+    const emailInput = document.getElementById('email');
+    if (emailInput) emailInput.disabled = true;
 
-                    const tbody = document.createElement('tbody');
-                    pasadas.forEach(r => {
-                        const [anio, mes, dia] = r.fecha.split('-');
-                        const fechaFormateada = `${dia}/${mes}/${anio}`;
-                        const deporteCapitalizado = r.deporte
-                            ? r.deporte.charAt(0).toUpperCase() + r.deporte.slice(1)
-                            : '(Pendiente de confirmación)';
+    if (btnEditar) btnEditar.style.display = 'inline-block';
+    if (btnGuardar) btnGuardar.style.display = 'none';
+  }
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                          <td>${r.nombreClub || 'Club desconocido'}</td>
-                          <td>${deporteCapitalizado}</td>
-                          <td>${fechaFormateada}</td>
-                          <td>${r.hora}</td>
-                          <td>${r.pagado ? 'Pagado' : 'Pendiente'}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+  function modoEdicion() {
+    camposUsuario.forEach(id => {
+      const input = document.getElementById(id);
+      if (input) input.disabled = false;
+    });
+    const emailInput = document.getElementById('email');
+    if (emailInput) emailInput.disabled = true;
 
-                    tabla.appendChild(tbody);
-                    contenedor.appendChild(tabla);
-                }
+    if (btnEditar) btnEditar.style.display = 'none';
+    if (btnGuardar) btnGuardar.style.display = 'inline-block';
+  }
 
-                btnVerPasadas.style.display = 'none';
-                const btnVolver = document.createElement('button');
-                btnVolver.textContent = 'Ver reservas futuras';
-                btnVolver.className = 'btn btn-outline-primary btn-sm mt-2';
-                btnVerPasadas.parentElement.appendChild(btnVolver);
+  if (btnEditar) {
+    btnEditar.addEventListener('click', modoEdicion);
+  }
 
-                btnVolver.addEventListener('click', () => {
-                    btnVolver.remove();
-                    btnVerPasadas.style.display = 'inline-block';
-                    cargarReservas();
-                });
+  // ✅ Guardar cambios de usuario
+  const formUsuario = document.getElementById('form-usuario');
+  if (formUsuario) {
+    formUsuario.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const datos = {
+        nombre: document.getElementById('nombre').value.trim(),
+        apellido: document.getElementById('apellido').value.trim(),
+        telefono: document.getElementById('telefono').value.trim()
+      };
 
-            } catch (error) {
-                console.error('Error al cargar reservas pasadas:', error);
-                document.getElementById('reservas-container').textContent = 'Error al cargar reservas pasadas.';
-            }
+      try {
+        const res = await fetch(`https://api.canchalibre.ar/usuario/${emailUsuario}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
         });
-    }
 
-    // 🔚 Cargar datos iniciales y dejar todo en modo lectura
-    await cargarReservas();
-    await cargarDatosUsuario();
-    modoLectura();
+        await res.json();
+        modoLectura();
+      } catch (error) {
+        console.error('Error al actualizar usuario:', error);
+        alert('Error al actualizar los datos.');
+      }
+    });
+  }
+
+  // 🔚 Cargar datos iniciales y dejar todo en modo lectura
+  await cargarDatosUsuario();
+  modoLectura();
 });
