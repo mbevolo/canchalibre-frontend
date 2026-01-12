@@ -603,8 +603,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
           try {
 const selectPago = document.getElementById('metodo-pago');
-const metodoPago = selectPago ? selectPago.value : 'efectivo';
-console.log('🧾 metodoPago elegido:', metodoPago);
+const metodoPagoSeleccionado = selectPago ? selectPago.value : 'efectivo';
 
 const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
   method: 'POST',
@@ -615,9 +614,10 @@ const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
     hora: sanitizeHTML(turnoGuardado.hora),
     usuarioId: null,
     email: sanitizeHTML(usuarioEmail),
-    metodoPago: metodoPago   // ✅ AHORA SE ENVÍA AL BACKEND
+    metodoPago: metodoPagoSeleccionado
   })
 });
+
 
 
             const data = await respuesta.json();
