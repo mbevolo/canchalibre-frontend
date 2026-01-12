@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reserva confirmada - CanchaLibre</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 420px;
+    }
+    h2 { color: #28a745; margin-top: 0; }
+    .muted { color: #6c757d; font-size: 14px; }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+    }
+    .btn2{
+      display:inline-block;
+      margin-top:10px;
+      padding:10px 14px;
+      border-radius:8px;
+      text-decoration:none;
+      background:#6c757d;
+      color:white;
+      font-weight:bold;
+    }
+    code { background:#f1f3f5; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>✅ Reserva confirmada</h2>
+    <p>Tu reserva fue confirmada correctamente.</p>
+    <p class="muted">ID de reserva: <code id="rid">-</code></p>
+
+    <a class="btn" href="index.html">← Volver al buscador</a>
+    <br/>
+    <a class="btn2" id="btnDetalle" href="detalle.html">Ver detalle</a>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    document.getElementById("rid").textContent = id || "-";
+
+    // Si existe el id, armamos un link al detalle (por si querés mostrar info)
+    const btnDetalle = document.getElementById("btnDetalle");
+    if (id) {
+      btnDetalle.href = `detalle.html?id=${encodeURIComponent(id)}`;
+    } else {
+      btnDetalle.style.display = "none";
+    }
+  </script>
+
+  <script src="js/footer.js"></script>
+</body>
+</html>
