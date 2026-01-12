@@ -55,28 +55,15 @@
   const id = params.get('id');
   const code = params.get('code');
 
-  async function confirmarReserva() {
-    try {
-      if (!id || !code) {
-        document.getElementById('mensaje').innerText = '❌ Enlace inválido o incompleto.';
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/reservas/confirmar/${id}/${code}`);
-      const text = await response.text();
-
-      document.querySelector('.card').innerHTML = `
-        <h2>CanchaLibre</h2>
-        <p>${text}</p>
-      `;
-    } catch (error) {
-      document.getElementById('mensaje').innerText = '❌ Error al confirmar la reserva.';
-      console.error(error);
-    }
+  // ✅ En vez de fetch (que da CORS), navegamos directo al backend
+  // El backend confirma y luego redirige (a MP o a la página final)
+  if (!id || !code) {
+    document.getElementById('mensaje').innerText = '❌ Enlace inválido o incompleto.';
+  } else {
+    window.location.href = `${API_BASE_URL}/reservas/confirmar/${id}/${code}`;
   }
-
-  confirmarReserva();
 </script>
+
 
   <script src="js/footer.js"></script>
 
