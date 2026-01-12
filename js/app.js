@@ -602,17 +602,23 @@ window.addEventListener('DOMContentLoaded', async () => {
           const usuarioEmail = localStorage.getItem('usuarioLogueado');
 
           try {
-            const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                canchaId: sanitizeHTML(turnoGuardado.canchaId),
-                fecha: sanitizeHTML(turnoGuardado.fecha),
-                hora: sanitizeHTML(turnoGuardado.hora),
-                usuarioId: null,
-                email: sanitizeHTML(usuarioEmail)
-              })
-            });
+const selectPago = document.getElementById('metodo-pago');
+const metodoPago = selectPago ? selectPago.value : 'efectivo';
+console.log('🧾 metodoPago elegido:', metodoPago);
+
+const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    canchaId: sanitizeHTML(turnoGuardado.canchaId),
+    fecha: sanitizeHTML(turnoGuardado.fecha),
+    hora: sanitizeHTML(turnoGuardado.hora),
+    usuarioId: null,
+    email: sanitizeHTML(usuarioEmail),
+    metodoPago: metodoPago   // ✅ AHORA SE ENVÍA AL BACKEND
+  })
+});
+
 
             const data = await respuesta.json();
 
