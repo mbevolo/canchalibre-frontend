@@ -357,6 +357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="card-body d-flex justify-content-between align-items-center">
             <div>
               <div class="fw-bold">${r.nombreClub || 'Club'}</div>
+              <div class="text-muted">Cancha: ${r.nombreCancha || r.canchaNombre || r.nombreCanchaReservada || '—'}</div>
               <div>📅 ${fechaBonita} — 🕒 ${r.hora}</div>
               <div class="mt-1">${estadoHtml}</div>
             </div>
