@@ -35,16 +35,6 @@
       color: white;
       font-weight: bold;
     }
-    .btn2{
-      display:inline-block;
-      margin-top:10px;
-      padding:10px 14px;
-      border-radius:8px;
-      text-decoration:none;
-      background:#6c757d;
-      color:white;
-      font-weight:bold;
-    }
     code { background:#f1f3f5; padding:2px 6px; border-radius:6px; }
   </style>
 </head>
@@ -55,22 +45,12 @@
     <p class="muted">ID de reserva: <code id="rid">-</code></p>
 
     <a class="btn" href="index.html">← Volver al buscador</a>
-    <br/>
-    <a class="btn2" id="btnDetalle" href="detalle.html">Ver detalle</a>
   </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     document.getElementById("rid").textContent = id || "-";
-
-    // Si existe el id, armamos un link al detalle (por si querés mostrar info)
-    const btnDetalle = document.getElementById("btnDetalle");
-    if (id) {
-      btnDetalle.href = `detalle.html?id=${encodeURIComponent(id)}`;
-    } else {
-      btnDetalle.style.display = "none";
-    }
   </script>
 
   <script src="js/footer.js"></script>
