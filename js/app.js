@@ -47,6 +47,17 @@ window.formatDuracion = function (min) {
   return `${n} min`;
 };
 
+window.formatFecha = function (fecha) {
+  const s = String(fecha || '').trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const [, y, mm, dd] = m;
+    return `${dd}/${mm}/${y}`;
+  }
+  return s;
+};
+
+
 // 🚩 Global para que funcione el onclick de los botones "Reservar"
 window.guardarTurnoYRedirigir = function (canchaId, club, deporte, fecha, hora, precio, duracionTurno) {
   localStorage.setItem(
@@ -513,7 +524,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                 ${esDestacado ? '<span style="color:gold;font-size:1.2em;">⭐ Club Destacado</span>' : ''}
               </h3>
               <p>Deporte: ${sanitizeHTML(turno.deporte)}</p>
-              <p>Fecha: ${sanitizeHTML(turno.fecha)}</p>
+<p>Fecha: ${sanitizeHTML(formatFecha(turno.fecha))}</p>
               <p>Hora: ${sanitizeHTML(turno.hora)}</p>
               <p>Precio: $${Number(turno.precio) || 0}</p>
               <p>Duración: ${formatDuracion(turno.duracionTurno)}</p>
@@ -560,7 +571,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         detalleDiv.innerHTML = `
           <h3>${sanitizeHTML(club?.nombre || turnoGuardado.club)}</h3>
           <p>Deporte: ${sanitizeHTML(turnoGuardado.deporte)}</p>
-          <p>Fecha: ${sanitizeHTML(turnoGuardado.fecha)}</p>
+<p>Fecha: ${sanitizeHTML(formatFecha(turnoGuardado.fecha))}</p>
           <p>Hora: ${sanitizeHTML(turnoGuardado.hora)}</p>
           <p>Precio: $${Number(turnoGuardado.precio) || 0}</p>
           <p>Duración: ${formatDuracion(turnoGuardado.duracionTurno)}</p>
@@ -578,7 +589,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         detalleDiv.innerHTML = `
           <h3>${sanitizeHTML(turnoGuardado.club)}</h3>
           <p>Deporte: ${sanitizeHTML(turnoGuardado.deporte)}</p>
-          <p>Fecha: ${sanitizeHTML(turnoGuardado.fecha)}</p>
+<p>Fecha: ${sanitizeHTML(formatFecha(turnoGuardado.fecha))}</p>
           <p>Hora: ${sanitizeHTML(turnoGuardado.hora)}</p>
           <p>Precio: $${Number(turnoGuardado.precio) || 0}</p>
           <p>Duración: ${formatDuracion(turnoGuardado.duracionTurno)}</p>
