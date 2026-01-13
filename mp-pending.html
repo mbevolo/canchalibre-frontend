@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pago pendiente - CanchaLibre</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f8f9fa;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{background:#fff;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:420px;width:92%;text-align:center}
+    h2{color:#ff9800;margin:0 0 10px}
+    p{color:#333}
+    a.btn{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:8px;background:#2c7be5;color:#fff;text-decoration:none}
+    .muted{color:#666;font-size:13px;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>⏳ Pago pendiente</h2>
+    <p>Tu pago quedó en estado pendiente o en revisión.</p>
+    <p id="turno"></p>
+    <a class="btn" href="index.html">Volver al buscador</a>
+    <div class="muted">Cuando MercadoPago lo apruebe, el turno se marcará como pagado automáticamente.</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const turnoId = params.get('turno');
+    if (turnoId) document.getElementById('turno').innerText = `Turno: ${turnoId}`;
+  </script>
+</body>
+</html>
