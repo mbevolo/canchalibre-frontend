@@ -898,13 +898,29 @@ btnDescargarQR.addEventListener('click', () => {
       if (!cancha) return;
 
       editandoCanchaId = cancha._id;
+// ✅ Asegurar que los selects tengan opciones antes de setear value
+if (horaDesdeInput && horaHastaInput) {
+  const horas = [];
+  for (let h = 0; h < 24; h++) {
+    const hh = String(h).padStart(2, '0');
+    horas.push(`${hh}:00`, `${hh}:30`);
+  }
+
+  // Si están vacíos, los rellenamos
+  if (!horaDesdeInput.options.length) {
+    horaDesdeInput.innerHTML = horas.map(x => `<option value="${x}">${x}</option>`).join('');
+  }
+  if (!horaHastaInput.options.length) {
+    horaHastaInput.innerHTML = horas.map(x => `<option value="${x}">${x}</option>`).join('');
+  }
+}
 
       nombreInput.value = cancha.nombre || '';
       tipoInput.value = cancha.deporte || 'futbol';
       precioInput.value = cancha.precio || '';
-      horaDesdeInput.value = cancha.horaDesde || '08:00';
-      horaHastaInput.value = cancha.horaHasta || '22:00';
-      if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
+     if (horaDesdeInput) horaDesdeInput.value = cancha.horaDesde || '08:00';
+if (horaHastaInput) horaHastaInput.value = cancha.horaHasta || '22:00';
+if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
       if (nocturnoDesdeInput) {
         nocturnoDesdeInput.value = (cancha.nocturnoDesde !== null && cancha.nocturnoDesde !== undefined)
