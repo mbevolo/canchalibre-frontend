@@ -1,3 +1,26 @@
+// V2: adjuntar automáticamente el JWT del club a las llamadas protegidas del panel.
+(() => {
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    try {
+      const url = typeof input === 'string' ? input : input.url;
+      const token = localStorage.getItem('clubToken');
+      if (token && url && url.startsWith('https://api.canchalibre.ar/')) {
+        const headers = new Headers(
+          init.headers || (typeof input !== 'string' && input.headers) || {}
+        );
+        if (!headers.has('Authorization')) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+        init = { ...init, headers };
+      }
+    } catch (e) {
+      console.warn('No se pudo adjuntar autenticación de club a la solicitud.');
+    }
+    return originalFetch(input, init);
+  };
+})();
+
 document.addEventListener('DOMContentLoaded', async () => {
     const clubEmail = localStorage.getItem('clubEmail');
     const clubNombre = localStorage.getItem('clubNombre');
