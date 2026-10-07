@@ -19,11 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cambiar de sección
   menu.addEventListener('click', e => {
-    if (e.target.classList.contains('list-group-item')) {
-      menu.querySelectorAll('.list-group-item').forEach(btn => btn.classList.remove('active'));
-      e.target.classList.add('active');
-      if (menu.scrollWidth > menu.clientWidth) menu.scrollLeft = e.target.offsetLeft - menu.offsetLeft;
-      cargarSeccion(e.target.dataset.section);
+    const target = e.target.closest('.list-group-item');
+    if (target) {
+      menu.querySelectorAll('.list-group-item').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('aria-current'); });
+      target.classList.add('active'); target.setAttribute('aria-current', 'page');
+      if (menu.scrollWidth > menu.clientWidth) menu.scrollLeft = target.offsetLeft - menu.offsetLeft;
+      cargarSeccion(target.dataset.section);
     }
   });
 
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <h2>Dashboard</h2>
           <p>Resumen general de CanchaLibre.</p>
         `;
+        cargarResumen();
         break;
       case 'clubes':
         content.innerHTML = `<h2>Gestión de Clubes</h2><p>Cargando clubes...</p>`;
@@ -52,15 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
         cargarReservas();
         break;
       case 'pagos':
-        content.innerHTML = `<h2>Pagos y Finanzas</h2><p>Cargando pagos...</p>`;
+        content.innerHTML = `<h2>Cobros y pagos</h2><p class="admin-description">Las reservas se cobran en la cuenta de cada club. Los destacados se cobran en tu cuenta de CanchaLibre.</p><p>Cargando pagos...</p>`;
         cargarPagos();
         break;
       case 'destacados':
         content.innerHTML = `<h2>Clubes Destacados</h2><p>Cargando clubes destacados...</p>`;
         cargarDestacados();
         break;
+      case 'mercadopago':
+        content.innerHTML = '<h2>MercadoPago</h2><p>Cargando tu cuenta de cobro…</p>';
+        cargarMercadoPago();
+        break;
       case 'config':
-        content.innerHTML = `<h2>Configuraciones Globales</h2><p>Cargando configuraciones...</p>`;
+        content.innerHTML = `<h2>Precio de destacados</h2><p class="admin-description">Definí cuánto paga un club y por cuántos días aparece destacado en las búsquedas.</p><p>Cargando configuraciones...</p>`;
         cargarConfiguraciones();
         break;
 
@@ -132,6 +138,7 @@ async function cargarClubes() {
 
     tabla += `</tbody></table>`;
     content.innerHTML = tabla;
+    mejorarTabla();
 
     // Acción GUARDAR (editar club)
     document.querySelectorAll('.editar-club').forEach(btn => {
@@ -270,6 +277,7 @@ async function cargarClubes() {
 
     tabla += `</tbody></table>`;
     content.innerHTML = tabla;
+    mejorarTabla();
 
     // Acción GUARDAR (editar usuario)
     document.querySelectorAll('.editar-usuario').forEach(btn => {
@@ -414,6 +422,7 @@ async function cargarClubes() {
 
     tabla += `</tbody></table>`;
     content.innerHTML = tabla;
+    mejorarTabla();
 
     // Acción GUARDAR (editar reserva)
     document.querySelectorAll('.editar-reserva').forEach(btn => {
@@ -511,13 +520,14 @@ async function cargarPagos() {
     if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
-    if (data.pagos.length === 0) {
-      content.innerHTML = `<h2>Pagos y Finanzas</h2><p>No hay pagos registrados.</p>`;
+    const featuredPayments = data.cobrosDestacados || [];
+    if (data.pagos.length === 0 && featuredPayments.length === 0) {
+      content.innerHTML = `<h2>Cobros y pagos</h2><p class="admin-description">Las reservas se cobran en la cuenta de cada club. Los destacados se cobran en tu cuenta de CanchaLibre.</p><p>No hay pagos registrados.</p>`;
       return;
     }
 
     let tabla = `
-      <h2>Pagos y Finanzas</h2>
+      <h2>Cobros y pagos</h2><p class="admin-description">Las reservas se cobran en la cuenta de cada club. Los destacados se cobran en tu cuenta de CanchaLibre.</p>
       <table class="table table-striped">
         <thead>
           <tr>
@@ -533,6 +543,7 @@ async function cargarPagos() {
         <tbody>
     `;
 
+    tabla = '<h2>Cobros y pagos</h2><p class="admin-description">Los destacados son ingresos de CanchaLibre. Las reservas pagadas pertenecen a cada club.</p>' + renderCobrosDestacados(featuredPayments) + '<h3 class="admin-subheading">Reservas pagadas de los clubes</h3>' + tabla.slice(tabla.indexOf('<table'));
     data.pagos.forEach(pago => {
       tabla += `
         <tr>
@@ -549,10 +560,11 @@ async function cargarPagos() {
 
     tabla += `</tbody></table>`;
     content.innerHTML = tabla;
+    mejorarTabla();
 
   } catch (error) {
     if (generation !== sectionGeneration) return;
-    content.innerHTML = `<h2>Pagos y Finanzas</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
+    content.innerHTML = `<h2>Cobros y pagos</h2><p class="admin-description">Las reservas se cobran en la cuenta de cada club. Los destacados se cobran en tu cuenta de CanchaLibre.</p><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
@@ -601,6 +613,7 @@ async function cargarDestacados() {
 
     tabla += `</tbody></table>`;
     content.innerHTML = tabla;
+    mejorarTabla();
 
     // Agregamos evento al botón
     document.querySelectorAll('.quitar-destacado').forEach(btn => {
@@ -650,14 +663,14 @@ async function cargarConfiguraciones() {
     const { precioDestacado, diasDestacado } = data.config;
 
     content.innerHTML = `
-      <h2>Configuraciones Globales</h2>
-      <form id="form-config" class="mb-3">
+      <h2>Precio de destacados</h2><p class="admin-description">Definí cuánto paga un club y por cuántos días aparece destacado en las búsquedas.</p>
+      <form id="form-config" class="admin-settings-card">
         <div class="mb-2">
-          <label>Precio para destacar club ($):</label>
+          <label for="precioDestacado">Precio por destacado (ARS)</label>
           <input type="number" class="form-control" id="precioDestacado" value="${precioDestacado}" min="0.01" step="0.01" required>
         </div>
         <div class="mb-2">
-          <label>Días de duración del destacado:</label>
+          <label for="diasDestacado">Duración en días</label>
           <input type="number" class="form-control" id="diasDestacado" value="${diasDestacado}" min="1" max="365" step="1" required>
         </div>
         <button type="submit" class="btn btn-primary mt-2">Guardar cambios</button>
@@ -667,6 +680,9 @@ async function cargarConfiguraciones() {
 
     document.getElementById('form-config').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const button = e.currentTarget.querySelector('button[type=submit]');
+      if (button.disabled) return;
+      button.disabled = true;
       const precio = document.getElementById('precioDestacado').value;
       const dias = document.getElementById('diasDestacado').value;
       const alerta = document.getElementById('config-alerta');
@@ -687,16 +703,87 @@ async function cargarConfiguraciones() {
           alerta.innerHTML = `<div class="alert alert-danger">${escapeAdminHtml(data.msg)}</div>`;
         }
       } catch (err) {
-        alerta.innerHTML = `<div class="alert alert-danger">Error: ${escapeAdminHtml(err.message)}</div>`;
-      }
+        alerta.innerHTML = '<div class="alert alert-danger">No se pudo guardar. Intentá nuevamente.</div>';
+      } finally { button.disabled = false; }
     });
 
   } catch (error) {
     if (generation !== sectionGeneration) return;
-    content.innerHTML = `<h2>Configuraciones Globales</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
+    content.innerHTML = `<h2>Precio de destacados</h2><p class="admin-description">Definí cuánto paga un club y por cuántos días aparece destacado en las búsquedas.</p><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
 
+
+function money(value) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(value) || 0); }
+function mejorarTabla() {
+  content.querySelectorAll('table').forEach((table, index) => {
+    const headings = [...table.querySelectorAll('thead th')].map(th => th.textContent);
+    const rows = [...table.querySelectorAll('tbody tr')];
+    rows.forEach(row => [...row.cells].forEach((cell, column) => { cell.dataset.label = headings[column] || ''; cell.querySelectorAll('input').forEach(input => input.setAttribute('aria-label', headings[column] || 'Dato')); }));
+    const wrapper = document.createElement('div'); wrapper.className = 'admin-table-scroll'; table.before(wrapper); wrapper.append(table);
+    const tools = document.createElement('div'); tools.className = 'admin-table-tools';
+    tools.innerHTML = `<label for="admin-search-${index}" class="visually-hidden">Buscar en ${escapeAdminHtml(content.dataset.section)}</label><input type="search" id="admin-search-${index}" placeholder="Buscar por nombre, correo o fecha…"><span class="admin-table-count" aria-live="polite"></span>`;
+    wrapper.before(tools);
+    const count = tools.querySelector('.admin-table-count');
+    const update = () => { const query = tools.querySelector('input').value.trim().toLocaleLowerCase('es'); let visible = 0;
+      rows.forEach(row => { const values = [...row.querySelectorAll('input')].map(input => input.value).join(' '); row.hidden = !(row.textContent + ' ' + values).toLocaleLowerCase('es').includes(query); if (!row.hidden) visible++; });
+      count.textContent = `${visible} de ${rows.length} registros`;
+    }; tools.querySelector('input').addEventListener('input', update); update();
+  });
+}
+async function adminGet(path) {
+  const response = await fetch(window.CanchaLibreApiUrl(path), { headers: { Authorization: 'Bearer ' + token } });
+  if (response.status === 401 || response.status === 403) { localStorage.removeItem('superadminToken'); location.href = 'login-superadmin.html'; throw new Error('Tu sesión venció. Volvé a ingresar.'); }
+  const data = await response.json(); if (!data.ok) throw new Error(data.msg || 'No se pudo cargar la información'); return data;
+}
+async function cargarResumen() {
+  const generation = sectionGeneration;
+  content.innerHTML = '<h2>Dashboard · Resumen</h2><p class="admin-description">El estado de tu plataforma, en un solo lugar.</p><p>Cargando resumen…</p>';
+  try {
+    const data = await adminGet('/superadmin/resumen'); if (generation !== sectionGeneration) return;
+    const r = data.resumen;
+    content.innerHTML = `<h2>Resumen de CanchaLibre</h2><p class="admin-description">El estado de tu plataforma, en un solo lugar.</p>
+      <div class="admin-stats">${[['Clubes',r.clubes],['Usuarios',r.usuarios],['Reservas',r.reservas],['Destacados vigentes',r.destacados]].map(([label,value])=>`<div class="admin-stat"><span>${label}</span><strong>${Number(value)||0}</strong></div>`).join('')}</div>
+      <div class="admin-revenue"><div><h3>INGRESOS POR DESTACADOS</h3><strong>${money(r.ingresosDestacados)}</strong><p>${Number(r.destacadosPagados)||0} pagos aprobados · total acumulado bruto</p></div><button class="btn" data-go="pagos">Ver cobros</button></div>
+      <h3 class="admin-subheading">Accesos rápidos</h3><div class="admin-shortcuts"><button data-go="clubes">Gestionar clubes</button><button data-go="reservas">Ver reservas</button><button data-go="config">Precio de destacados</button><button data-go="mercadopago">Cuenta de MercadoPago</button></div>`;
+    content.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>menu.querySelector(`[data-section="${button.dataset.go}"]`).click()));
+  } catch (error) { if (generation === sectionGeneration) content.innerHTML = `<h2>Dashboard · Resumen</h2><div class="alert alert-danger">${escapeAdminHtml(error.message)}</div><button class="btn btn-secondary" id="retry-summary">Reintentar</button>`; content.querySelector('#retry-summary')?.addEventListener('click',cargarResumen); }
+}
+function renderCobrosDestacados(orders) {
+  const total = orders.reduce((sum, order) => sum + (Number(order.precio)||0), 0);
+  return `<div class="admin-revenue"><div><h3>DESTACADOS · INGRESOS DE CANCHALIBRE</h3><strong>${money(total)}</strong><p>${orders.length} pagos aprobados · importes brutos antes de comisiones</p></div></div><h3 class="admin-subheading">Cobros por destacados</h3>` + (orders.length ? `<table class="table"><thead><tr><th>Club</th><th>Fecha de solicitud</th><th>Duración</th><th>Importe</th><th>Pago MercadoPago</th></tr></thead><tbody>${orders.map(order=>`<tr><td>${escapeAdminHtml(order.clubId?.nombre||'Club eliminado')}<br><small>${escapeAdminHtml(order.clubId?.email||'')}</small></td><td>${escapeAdminHtml(new Date(order.createdAt).toLocaleDateString('es-AR'))}</td><td>${Number(order.dias)||0} días</td><td>${money(order.precio)}</td><td>${escapeAdminHtml(order.paymentId)}</td></tr>`).join('')}</tbody></table>`:'<p class="admin-empty">Todavía no hay cobros por destacados.</p>');
+}
+async function cargarMercadoPago() {
+  const generation = sectionGeneration;
+  try {
+    const data = await adminGet('/superadmin/mercadopago'); if (generation !== sectionGeneration) return;
+    const mp = data.mercadopago;
+    const account = mp.account;
+    content.innerHTML = `<h2>Tu cuenta de MercadoPago</h2><p class="admin-description">Los clubes pagan los destacados a esta cuenta de CanchaLibre.</p>
+      <div class="admin-account"><h3>${account ? 'Cuenta verificada' : mp.configured ? 'Credencial configurada en el servidor' : 'Conectá tu cuenta de cobro'}</h3>
+      ${account ? `<p><strong>${escapeAdminHtml(account.name)}</strong> · ${escapeAdminHtml(account.email)}</p><p>Cuenta ${escapeAdminHtml(account.id)}${account.test?' · Cuenta de prueba':''}</p>` : '<p>Ingresá tu Access Token para verificar a quién se acreditarán los destacados.</p>'}
+      <p>Notificaciones de pago: <strong>${mp.webhookConfigured?'clave configurada':'falta configurar la clave'}</strong></p></div>
+      <div class="admin-mp-grid"><form id="form-mp" class="admin-settings-card" autocomplete="off">
+        <div class="mb-3"><label for="mp-access-token">Access Token de tu cuenta</label><input type="password" id="mp-access-token" class="form-control" autocomplete="new-password" maxlength="500" placeholder="APP_USR-… o TEST-…"><small class="text-muted">Dejalo vacío para conservar el actual. No vuelve a mostrarse después de guardar.</small></div>
+        <div class="mb-3"><label for="mp-webhook-secret">Clave secreta de notificaciones (Webhooks)</label><input type="password" id="mp-webhook-secret" class="form-control" autocomplete="new-password" maxlength="256" placeholder="Clave de tu aplicación de MercadoPago"><small class="text-muted">Dejala vacía para conservar la actual.</small></div>
+        <button type="submit" class="btn btn-primary">Verificar y guardar</button><p id="mp-feedback" role="status" class="mt-3"></p>
+      </form><div class="admin-mp-help"><h3>Cómo conectar tu cuenta</h3><ol><li>Entrá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noopener">Tus integraciones de MercadoPago</a> con la cuenta donde querés recibir los cobros.</li><li>Elegí tu aplicación y copiá el <strong>Access Token</strong> de sus credenciales. Para pruebas, usá una cuenta y credenciales de prueba.</li><li>En <strong>Webhooks</strong>, configurá esta URL para pagos y copiá la clave secreta generada:</li></ol><code class="admin-webhook-url">${escapeAdminHtml(mp.webhookUrl)}</code><p>Guardá ambos datos acá. La contraseña de MercadoPago y el CBU no se cargan en CanchaLibre.</p></div></div>`;
+    document.getElementById('form-mp').addEventListener('submit', async event => {
+      event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type=submit]'); if (button.disabled) return;
+      const body = {}; const accessToken = document.getElementById('mp-access-token').value.trim(); const webhookSecret = document.getElementById('mp-webhook-secret').value.trim();
+      if (accessToken) body.accessToken = accessToken; if (webhookSecret) body.webhookSecret = webhookSecret;
+      const feedback = document.getElementById('mp-feedback'); if (!Object.keys(body).length) { feedback.textContent = 'Ingresá una credencial nueva para guardar.'; return; }
+      button.disabled = true; feedback.textContent = 'Verificando y guardando…';
+      try {
+        const response = await fetch(window.CanchaLibreApiUrl('/superadmin/mercadopago'), { method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body) });
+        const result = await response.json(); if (!response.ok || !result.ok) throw new Error(result.msg || 'No se pudo guardar la cuenta');
+        if (generation !== sectionGeneration) return;
+        await cargarMercadoPago(); const message = document.getElementById('mp-feedback'); if (message) { message.className='mt-3 text-success'; message.textContent='Configuración guardada. '+(result.mercadopago.webhookConfigured?'Revisá también la URL de Webhooks en MercadoPago.':'Falta configurar la clave de Webhooks para confirmar los pagos.'); }
+      } catch(error) { feedback.className='mt-3 text-danger'; feedback.textContent=error.message; }
+      finally { form.querySelectorAll('input[type=password]').forEach(input=>input.value='');button.disabled=false; }
+    });
+  } catch(error) { if(generation===sectionGeneration) content.innerHTML=`<h2>MercadoPago</h2><div class="alert alert-danger">${escapeAdminHtml(error.message)}</div>`; }
+}
 
 });
