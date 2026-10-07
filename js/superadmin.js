@@ -720,7 +720,40 @@ function mejorarTabla() {
   content.querySelectorAll('table').forEach((table, index) => {
     const headings = [...table.querySelectorAll('thead th')].map(th => th.textContent);
     const rows = [...table.querySelectorAll('tbody tr')];
-    rows.forEach(row => [...row.cells].forEach((cell, column) => { cell.dataset.label = headings[column] || ''; cell.querySelectorAll('input').forEach(input => input.setAttribute('aria-label', headings[column] || 'Dato')); }));
+    rows.forEach(row => {
+      row.classList.add('admin-record');
+      [...row.cells].forEach((cell, column) => {
+        cell.dataset.label = headings[column] || '';
+        cell.querySelectorAll('input').forEach(input => {
+          input.setAttribute('aria-label', headings[column] || 'Dato');
+          input.dataset.originalValue = input.value;
+          input.hidden = true;
+          const value = document.createElement('span');
+          value.className = 'admin-record-value';
+          value.textContent = input.value || 'Sin informar';
+          cell.prepend(value);
+        });
+      });
+      const save = row.querySelector('.editar-club, .editar-usuario, .editar-reserva');
+      if (save) {
+        const actions = save.closest('td'); actions.classList.add('admin-record-actions');
+        save.hidden = true;
+        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'btn btn-sm btn-outline-primary admin-edit-record'; edit.textContent = 'Editar datos';
+        const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn btn-sm btn-secondary admin-cancel-edit'; cancel.textContent = 'Cancelar edición'; cancel.hidden = true;
+        actions.prepend(edit); actions.append(cancel);
+        const setEditing = editing => {
+          row.classList.toggle('admin-row-editing', editing);
+          row.querySelectorAll('input').forEach(input => { input.hidden = !editing; });
+          row.querySelectorAll('.admin-record-value').forEach(value => value.hidden = editing);
+          edit.hidden = editing; cancel.hidden = !editing; save.hidden = !editing;
+        };
+        edit.addEventListener('click', () => { setEditing(true); row.querySelector('input')?.focus(); });
+        cancel.addEventListener('click', () => {
+          row.querySelectorAll('input').forEach(input => input.value = input.dataset.originalValue);
+          setEditing(false); edit.focus();
+        });
+      }
+    });
     const wrapper = document.createElement('div'); wrapper.className = 'admin-table-scroll'; table.before(wrapper); wrapper.append(table);
     const tools = document.createElement('div'); tools.className = 'admin-table-tools';
     tools.innerHTML = `<label for="admin-search-${index}" class="visually-hidden">Buscar en ${escapeAdminHtml(content.dataset.section)}</label><input type="search" id="admin-search-${index}" placeholder="Buscar por nombre, correo o fecha…"><span class="admin-table-count" aria-live="polite"></span>`;
