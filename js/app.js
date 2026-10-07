@@ -545,7 +545,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             const destacado = clubInfo?.destacado && new Date(clubInfo.destacadoHasta) > new Date();
             const card = document.createElement('article');
             card.className = 'turno club-result';
-            card.innerHTML = `<div class="slot-top"><span class="sport-tag">${canchas.size} ${canchas.size === 1 ? 'cancha disponible' : 'canchas disponibles'}</span>${destacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div><h3>${sanitizeHTML(nombre)}</h3><p class="slot-location">${sanitizeHTML([clubInfo?.direccion, clubInfo?.localidad, clubInfo?.provincia].filter(Boolean).join(' · '))}</p>`;
+            const overview = document.createElement('div');overview.className = 'club-overview';
+            const courtsContainer = document.createElement('div');courtsContainer.className = 'club-courts';
+            card.append(overview, courtsContainer);
+            overview.innerHTML = `<div class="slot-top"><span class="sport-tag">${canchas.size} ${canchas.size === 1 ? 'cancha disponible' : 'canchas disponibles'}</span>${destacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div><h3>${sanitizeHTML(nombre)}</h3><p class="slot-location">${sanitizeHTML([clubInfo?.direccion, clubInfo?.localidad, clubInfo?.provincia].filter(Boolean).join(' · '))}</p>`;
             const infoLink = document.createElement('a');
             infoLink.href = 'club-info.html?club=' + encodeURIComponent(clubEmail);
             infoLink.className = 'club-info-link';
@@ -553,9 +556,13 @@ window.addEventListener('DOMContentLoaded', async () => {
             const portada = clubInfo?.fotos?.[0];
             if (typeof portada === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(portada)) {
               const photoLink = document.createElement('a');photoLink.href = infoLink.href;
-              const photo = document.createElement('img');photo.src = portada;photo.alt = `Conocé ${nombre}`;photo.loading = 'lazy';photo.className = 'club-result-photo';photoLink.append(photo);card.prepend(photoLink);
+              const photo = document.createElement('img');photo.src = portada;photo.alt = `Conocé ${nombre}`;photo.loading = 'lazy';photo.className = 'club-result-photo';photoLink.append(photo);overview.prepend(photoLink);
             }
-            card.append(infoLink);
+            else {
+              const placeholder = document.createElement('div');placeholder.className = 'club-cover-placeholder';
+              placeholder.innerHTML = '<span>CanchaLibre</span><small>Encontrá tu próximo partido</small>';overview.prepend(placeholder);
+            }
+            overview.append(infoLink);
             canchas.forEach(slots => {
               slots.sort((a,b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
               const first = slots[0];
@@ -580,7 +587,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                 toggle.addEventListener('click', () => { const expanded = toggle.getAttribute('aria-expanded') !== 'true';toggle.setAttribute('aria-expanded',String(expanded));[...times.children].forEach((button,index) => button.hidden = index>=6 && !expanded);toggle.textContent = expanded ? 'Ver menos horarios' : `Ver ${slots.length-6} horarios más`; });
                 section.append(toggle);
               }
-              card.append(section);
+              courtsContainer.append(section);
             });
             resultados.append(card);
           });
