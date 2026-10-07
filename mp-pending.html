@@ -16,8 +16,11 @@
     a.btn{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:8px;background:#2c7be5;color:#fff;text-decoration:none}
     .muted{color:#666;font-size:13px;margin-top:10px}
   </style>
+<link rel="stylesheet" href="css/brand.css">
 </head>
-<body>
+<body class="cl-theme cl-status">
+<header class="cl-header"><a class="cl-brand" href="index.html" aria-label="CanchaLibre, inicio"><img src="img/canchalibre-logo.svg" width="255" height="48" alt="CanchaLibre"></a><a class="cl-back" href="index.html">Volver al buscador</a></header>
+<main class="cl-page">
   <div class="card">
     <h2>⏳ Pago pendiente</h2>
     <p>Tu pago quedó en estado pendiente o en revisión.</p>
@@ -31,5 +34,6 @@
     const turnoId = params.get('turno');
     if (turnoId) document.getElementById('turno').innerText = `Turno: ${turnoId}`;
   </script>
+</main>
 </body>
 </html>
