@@ -134,6 +134,25 @@ function initLinkYQRBuscadorClub() {
   shareUrl.searchParams.set('clubId', clubId);
   const link = shareUrl.href;
   inputLink.value = link;
+  const copyStatus = document.createElement('p');
+  copyStatus.className = 'small mt-2'; copyStatus.setAttribute('role', 'status');
+  inputLink.parentElement.appendChild(copyStatus);
+  btnCopiar.addEventListener('click', async () => {
+    btnCopiar.disabled = true;
+    try {
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try { await navigator.clipboard.writeText(link); copied = true; } catch { /* Fall back to selection when clipboard permission is unavailable. */ }
+      }
+      if (!copied) {
+        inputLink.focus(); inputLink.select(); inputLink.setSelectionRange(0, inputLink.value.length);
+        copied = document.execCommand('copy');
+      }
+      copyStatus.textContent = copied ? 'Enlace copiado.' : 'Seleccionamos el enlace. Presioná Ctrl+C para copiarlo.';
+    } catch { inputLink.focus(); inputLink.select(); copyStatus.textContent = 'Presioná Ctrl+C para copiar el enlace seleccionado.'; }
+    finally { btnCopiar.disabled = false; }
+  });
+
 
 // ---- Generar QR / Descargar (con logo y sin alerts)
 let ultimoQRDataUrl = null;

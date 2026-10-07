@@ -16,6 +16,7 @@ async function resolverClubEmailDesdeId(clubId) {
     const res = await fetch(window.CanchalibreAuth.apiUrl(`/club-id/${encodeURIComponent(clubId)}`));
     if (!res.ok) throw new Error('No se pudo resolver clubId');
     const club = await res.json();
+    CLUB_INFO_FROM_URL = club;
     return club?.email || null;
   } catch (e) {
     console.error("❌ Error resolviendo clubId -> email:");
@@ -25,6 +26,7 @@ async function resolverClubEmailDesdeId(clubId) {
 
 // ✅ Variables globales del flujo QR
 const CLUB_ID_RAW_FROM_URL = getClubIdFromUrl(); // lo que viene en la URL (normalmente _id)
+let CLUB_INFO_FROM_URL = null;
 let CLUB_EMAIL_FROM_URL = null;                  // el email resuelto (lo que usa el sistema actual)
 
 window.sanitizeHTML = function (str) {
@@ -468,11 +470,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   // --- Carga de provincias/localidades si corresponde ---
   await cargarUbicaciones();
 
-  // Si el club vino por QR, intento fijar el select incluso después de cargar ubicaciones
-  const clubSelectInit = document.getElementById('club');
-  if (CLUB_EMAIL_FROM_URL && clubSelectInit) {
-    clubSelectInit.value = CLUB_EMAIL_FROM_URL;
-    clubSelectInit.disabled = true;
+  // Create the selected options before assigning values; loading locations clears them.
+  if (CLUB_INFO_FROM_URL && CLUB_EMAIL_FROM_URL) {
+    for (const [id, value, label] of [
+      ['provincia', CLUB_INFO_FROM_URL.provincia, CLUB_INFO_FROM_URL.provincia],
+      ['localidad', CLUB_INFO_FROM_URL.localidad, CLUB_INFO_FROM_URL.localidad],
+      ['club', CLUB_EMAIL_FROM_URL, CLUB_INFO_FROM_URL.nombre]
+    ]) {
+      const select = document.getElementById(id);
+      if (!select || !value) continue;
+      if (!Array.from(select.options).some(option => option.value === value)) select.add(new Option(label || value, value));
+      select.value = value;
+      select.disabled = true;
+    }
+    const gps = document.getElementById('usar-ubicacion');
+    if (gps) gps.disabled = true;
   }
 
   // --- Buscador de turnos (index.html) ---
