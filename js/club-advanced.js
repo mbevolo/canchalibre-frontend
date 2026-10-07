@@ -121,7 +121,7 @@ function initLinkYQRBuscadorClub() {
 
   if (!inputLink || !btnCopiar || !btnGenerarQR || !btnDescargarQR || !contQR) return;
 
-  const clubId = (localStorage.getItem('clubId') || '').trim();
+  const clubId = String(clubData?._id || localStorage.getItem('clubId') || '').trim();
   if (!clubId) {
     inputLink.value = '⚠️ No se encontró clubId. Volvé a iniciar sesión como club.';
     btnCopiar.disabled = true;
@@ -130,7 +130,9 @@ function initLinkYQRBuscadorClub() {
     return;
   }
 
-  const link = `https://canchalibre.ar/?clubId=${encodeURIComponent(clubId)}`;
+  const shareUrl = new URL('./', window.location.href);
+  shareUrl.searchParams.set('clubId', clubId);
+  const link = shareUrl.href;
   inputLink.value = link;
 
 // ---- Generar QR / Descargar (con logo y sin alerts)

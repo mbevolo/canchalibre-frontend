@@ -84,7 +84,7 @@ const {chromium}=require(path.join(front, 'node_modules/playwright'));
   await page.waitForFunction(()=>Array.from(document.querySelectorAll('#reservas-list tr')).some(r=>r.textContent.includes('paid@example.com')&&r.textContent.includes('Pagado')));
   const [paidCancel]=await Promise.all([page.waitForResponse(r=>r.url()===apiBase+'/turnos/'+paid._id+'/cancelar'),paidRow.locator('.cancelar-reserva').click()]);assert.equal(paidCancel.status(),409);
   await page.waitForTimeout(100);assert.ok(dialogs.some(t=>t.includes('reintegro')));assert.equal((await Turno.findById(paid._id)).pagado,true);assert.equal((await Turno.findById(paid._id)).pagoMetodo,'manual');
-  await page.click('#compartir-tab');await page.waitForFunction(()=>document.getElementById('club-link-buscador').value.includes('club'));await page.click('#btn-generar-qr-buscador');await page.waitForSelector('#qr-buscador canvas');
+  await page.click('#compartir-tab');assert.equal(await page.locator('#club-link-buscador').inputValue(),origin+'/?clubId='+club._id);await page.waitForFunction(()=>document.getElementById('club-link-buscador').value.includes('club'));await page.click('#btn-generar-qr-buscador');await page.waitForSelector('#qr-buscador canvas');
   await page.goto(origin+'/estadisticas.html');await page.waitForFunction(()=>document.getElementById('kpi-reservas').textContent!=='—');
   assert.ok(await page.evaluate(()=>Chart.getChart('chart-reservas-dia')));
   await page.selectOption('#select-mes',{index:1});await page.waitForFunction(()=>document.getElementById('kpi-ocupacion').textContent!=='—');
