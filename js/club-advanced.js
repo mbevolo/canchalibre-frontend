@@ -1,3 +1,13 @@
+function showFeaturedPaymentLink(container, data, title) {
+  const url = new URL(data.pagoUrl);
+  if (url.protocol !== 'https:') throw new Error('Enlace de pago inválido');
+  const box = document.createElement('div'); box.className = 'alert alert-info mt-2';
+  const label = document.createElement('p'); label.textContent = title;
+  const link = document.createElement('a'); link.href = url.href; link.textContent = 'Abrir pago seguro';
+  link.target = '_blank'; link.rel = 'noopener noreferrer';
+  box.append(label, link); container.replaceChildren(box);
+}
+
 function showClubPaymentLink(data, reserva, nombreClub) {
   const paymentUrl = new URL(data.pagoUrl);
   if (paymentUrl.protocol !== 'https:') throw new Error('Enlace de pago inválido');
@@ -23,6 +33,7 @@ function showClubPaymentLink(data, reserva, nombreClub) {
     const note = document.createElement('p'); note.textContent = 'Podés copiar el enlace; no hay un teléfono válido para compartir por WhatsApp.'; dialog.appendChild(note);
   }
   const close = document.createElement('button'); close.textContent = 'Cerrar'; close.className = 'btn btn-secondary m-2'; close.onclick = () => { dialog.close(); dialog.remove(); }; dialog.appendChild(close);
+  dialog.addEventListener('close', () => dialog.remove(), { once: true });
   document.body.appendChild(dialog); dialog.showModal();
 }
 
@@ -329,13 +340,8 @@ btnDescargarQR.addEventListener('click', () => {
               headers: { 'Content-Type': 'application/json' }
             });
             const data = await res.json();
-            if (data.pagoUrl) {
-              document.getElementById('pago-destacado-resultado').innerHTML = `
-                <div class="alert alert-info mt-2">
-                  <b>Link para renovar tu destaque por ${DIAS_DESTACADO} días ($${PRECIO_DESTACADO}):</b><br>
-                  <a href="${data.pagoUrl}" target="_blank">${data.pagoUrl}</a>
-                </div>
-              `;
+            if (res.ok && data.pagoUrl) {
+              showFeaturedPaymentLink(document.getElementById('pago-destacado-resultado'), data, `Destaque por ${DIAS_DESTACADO} días ($${PRECIO_DESTACADO})`);
             } else {
               document.getElementById('pago-destacado-resultado').textContent =
                 data.error || 'No se pudo generar el link de pago';
@@ -372,13 +378,8 @@ btnDescargarQR.addEventListener('click', () => {
               headers: { 'Content-Type': 'application/json' }
             });
             const data = await res.json();
-            if (data.pagoUrl) {
-              document.getElementById('pago-destacado-resultado').innerHTML = `
-                <div class="alert alert-info mt-2">
-                  <b>Link para destacar tu club por ${DIAS_DESTACADO} días ($${PRECIO_DESTACADO}):</b><br>
-                  <a href="${data.pagoUrl}" target="_blank">${data.pagoUrl}</a>
-                </div>
-              `;
+            if (res.ok && data.pagoUrl) {
+              showFeaturedPaymentLink(document.getElementById('pago-destacado-resultado'), data, `Destaque por ${DIAS_DESTACADO} días ($${PRECIO_DESTACADO})`);
             } else {
               document.getElementById('pago-destacado-resultado').textContent =
                 data.error || 'No se pudo generar el link de pago';
@@ -591,12 +592,14 @@ btnDescargarQR.addEventListener('click', () => {
                 ? (String(cancha.nocturnoDesde).padStart(2, '0') + ':00')
                 : '—'
             } — $${(cancha.precioNocturno !== null && cancha.precioNocturno !== undefined) ? cancha.precioNocturno : '—'}</p>
-            <p><strong>Días disponibles:</strong> ${cancha.diasDisponibles ? cancha.diasDisponibles.join(', ') : 'No especificado'}</p>
-            <button class="btn btn-primary btn-sm me-2" onclick="editarCancha('${cancha._id}')">Editar</button>
-            <button class="btn btn-danger btn-sm" onclick="eliminarCancha('${cancha._id}')">Eliminar</button>
+            <p><strong>Días disponibles:</strong> ${escapeClubHtml(cancha.diasDisponibles ? cancha.diasDisponibles.join(', ') : 'No especificado')}</p>
+            <button class="btn btn-primary btn-sm me-2" data-action="edit">Editar</button>
+            <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
           </div>
         </div>
       `;
+      div.querySelector('[data-action="edit"]').addEventListener('click', () => window.editarCancha(cancha._id));
+      div.querySelector('[data-action="delete"]').addEventListener('click', () => window.eliminarCancha(cancha._id));
       canchasList.appendChild(div);
     });
   }
@@ -746,6 +749,8 @@ btnDescargarQR.addEventListener('click', () => {
 
             if (btnPago) {
               btnPago.onclick = async () => {
+                if (btnPago.disabled) return;
+                btnPago.disabled = true;
                 try {
                   const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turno.realId}/payment-link`), {
                     method: 'POST',
@@ -764,15 +769,17 @@ btnDescargarQR.addEventListener('click', () => {
                   showClubPaymentLink(data, reserva, clubData?.nombre);
                 } catch (err) {
                   alert('Error generando el link de pago: ' + err.message);
-                }
+                } finally { btnPago.disabled = false; }
               };
             }
 
             if (btnPagado) {
               btnPagado.onclick = async () => {
+                if (btnPagado.disabled) return;
                 const confirmar = confirm('¿Confirmás que el usuario pagó en efectivo u otro medio?');
                 if (!confirmar) return;
 
+                btnPagado.disabled = true;
                 try {
                   const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turno.realId}/marcar-pagado`), {
                     method: 'PATCH',
@@ -787,7 +794,7 @@ btnDescargarQR.addEventListener('click', () => {
                   }
                 } catch (err) {
                   alert('Error al marcar como pagada.');
-                }
+                } finally { btnPagado.disabled = false; }
               };
             }
           }, 0);
@@ -1010,6 +1017,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
   // Reservar turno manual
   btnReservarTurno?.addEventListener('click', async () => {
+    if (btnReservarTurno.disabled) return;
     const nombreCliente = document.getElementById('nombreCliente')?.value.trim();
     const telefonoCliente = document.getElementById('telefonoCliente')?.value.trim();
     const emailCliente = document.getElementById('emailCliente')?.value.trim();
@@ -1181,7 +1189,9 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
     reservasList.querySelectorAll('.generar-pago').forEach(btn => {
       btn.addEventListener('click', async () => {
+        if (btn.disabled) return;
         const id = btn.getAttribute('data-id');
+        btn.disabled = true;
         try {
           const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/payment-link`), {
             method: 'POST',
@@ -1200,16 +1210,18 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
           showClubPaymentLink(data, reserva, clubData?.nombre);
         } catch (err) {
           alert('Error generando el link de pago: ' + err.message);
-        }
+        } finally { btn.disabled = false; }
       });
     });
 
     reservasList.querySelectorAll('.marcar-pagada').forEach(btn => {
       btn.addEventListener('click', async () => {
+        if (btn.disabled) return;
         const id = btn.getAttribute('data-id');
         const confirmar = confirm('¿Confirmás que el usuario pagó en efectivo u otro medio?');
         if (!confirmar) return;
 
+        btn.disabled = true;
         try {
           const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/marcar-pagado`), {
             method: 'PATCH',
@@ -1223,7 +1235,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
           }
         } catch (err) {
           alert('Error al marcar como pagada.');
-        }
+        } finally { btn.disabled = false; }
       });
     });
 
@@ -1337,7 +1349,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       if (!res.ok) throw new Error('Error al obtener reservas');
       const reservas = await res.json();
 
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
       const reservasHoy = reservas.filter(r => r.fecha === hoy);
 
       if (reservasHoy.length === 0) {
@@ -1360,7 +1372,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
         div.innerHTML = `
           <strong>${escapeClubHtml(r.hora)} hs</strong> - <b>${escapeClubHtml(r.nombreCancha || 'Cancha')}</b><br>
-          ${nombre.trim() || '-'} ${telefono ? ' - ' + telefono : ''}<br>
+          ${escapeClubHtml(nombre.trim() || '-')} ${telefono ? ' - ' + escapeClubHtml(telefono) : ''}<br>
           Estado: <b>${r.pagado ? 'Pagado' : 'Pendiente'}</b>
         `;
 

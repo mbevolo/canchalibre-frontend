@@ -21,8 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  let sectionGeneration = 0;
   // Función para mostrar contenido por sección
   function cargarSeccion(seccion) {
+    sectionGeneration++;
+    content.dataset.section = seccion;
     switch (seccion) {
       case 'dashboard':
         content.innerHTML = `
@@ -72,12 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- FUNCIÓN PARA CARGAR CLUBES ---
 async function cargarClubes() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'clubes') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/clubes'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     if (data.clubes.length === 0) {
@@ -196,6 +202,7 @@ async function cargarClubes() {
     });
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Gestión de Clubes</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
@@ -204,12 +211,15 @@ async function cargarClubes() {
   // --- FUNCIÓN PARA CARGAR USUARIOS ---
   async function cargarUsuarios() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'usuarios') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/usuarios'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     if (data.usuarios.length === 0) {
@@ -331,18 +341,22 @@ async function cargarClubes() {
     });
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Gestión de Usuarios</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
   async function cargarReservas() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'reservas') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/reservas'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     if (data.reservas.length === 0) {
@@ -473,18 +487,22 @@ async function cargarClubes() {
     });
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Gestión de Reservas</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
 async function cargarPagos() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'pagos') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/pagos'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     if (data.pagos.length === 0) {
@@ -527,18 +545,22 @@ async function cargarPagos() {
     content.innerHTML = tabla;
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Pagos y Finanzas</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
 async function cargarDestacados() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'destacados') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/destacados'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     if (data.destacados.length === 0) {
@@ -602,17 +624,21 @@ async function cargarDestacados() {
     });
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Clubes Destacados</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 async function cargarConfiguraciones() {
   const content = document.getElementById('superadmin-content');
+  if (content.dataset.section !== 'config') return;
+  const generation = sectionGeneration;
   const token = localStorage.getItem('superadminToken');
   try {
     const res = await fetch(window.CanchaLibreApiUrl('/superadmin/configuraciones'), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await res.json();
+    if (generation !== sectionGeneration) return;
     if (!data.ok) throw new Error(data.msg);
 
     const { precioDestacado, diasDestacado } = data.config;
@@ -660,6 +686,7 @@ async function cargarConfiguraciones() {
     });
 
   } catch (error) {
+    if (generation !== sectionGeneration) return;
     content.innerHTML = `<h2>Configuraciones Globales</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }

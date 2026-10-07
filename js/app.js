@@ -215,10 +215,14 @@ async function cargarClubs(provincia, localidad) {
   }
 }
 
+let mapaResultados = null;
 function mostrarMapa(turnos) {
   const resultados = document.getElementById('resultados');
   if (!resultados) return;
 
+  if (mapaResultados) { mapaResultados.remove(); mapaResultados = null; }
+  document.getElementById('map')?.remove();
+  document.getElementById('map-aviso')?.remove();
   const mapContainer = document.createElement('div');
   mapContainer.id = 'map';
   mapContainer.style.height = '500px';
@@ -227,6 +231,7 @@ function mostrarMapa(turnos) {
 
   if (typeof L === 'undefined') {
     const aviso = document.createElement('p');
+    aviso.id = 'map-aviso';
     aviso.textContent = 'El mapa no se pudo cargar (Leaflet no disponible).';
     resultados.appendChild(aviso);
     return;
@@ -237,21 +242,41 @@ function mostrarMapa(turnos) {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  turnos.forEach(turno => {
-    if (turno.latitud && turno.longitud) {
-      const popupContent = `
-        <b>${sanitizeHTML(turno.deporte)}</b><br>
-        ${sanitizeHTML(turno.club)}<br>
-        ${sanitizeHTML(turno.fecha)} ${sanitizeHTML(turno.hora)}<br>
-        $${Number(turno.precio) || 0}<br>
-        Duración: ${formatDuracion(turno.duracionTurno)}<br>
-        <button onclick="guardarTurnoYRedirigir('${sanitizeHTML(turno.canchaId)}', '${sanitizeHTML(turno.club)}', '${sanitizeHTML(turno.deporte)}', '${sanitizeHTML(turno.fecha)}', '${sanitizeHTML(turno.hora)}', ${Number(turno.precio) || 0}, ${Number(turno.duracionTurno) || 60})">Reservar</button>
-      `;
-      L.marker([turno.latitud, turno.longitud])
-        .addTo(map)
-        .bindPopup(popupContent);
-    }
-  });
+  mapaResultados = map;
+  const locations = new Map();
+  for (const turno of turnos) {
+    if (turno.latitud == null || turno.longitud == null || turno.latitud === '' || turno.longitud === '') continue;
+    const latitude = Number(turno.latitud), longitude = Number(turno.longitud);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) continue;
+    const key = `${latitude},${longitude}`;
+    if (!locations.has(key)) locations.set(key, { coords: [latitude, longitude], turnos: [] });
+    locations.get(key).turnos.push(turno);
+  }
+  const coordinates = [];
+  for (const location of locations.values()) {
+    coordinates.push(location.coords);
+    L.marker(location.coords).addTo(map).bindPopup(() => {
+      const popup = document.createElement('div');
+      popup.style.cssText = 'max-height:260px;overflow-y:auto';
+      for (const turno of location.turnos) {
+        const slot = document.createElement('div');
+        slot.className = 'mb-2';
+        const description = document.createElement('p');
+        description.textContent = `${turno.deporte} · ${turno.club} · ${turno.fecha} ${turno.hora} · $${Number(turno.precio) || 0} · ${formatDuracion(turno.duracionTurno)}`;
+        const reserve = document.createElement('button');
+        reserve.type = 'button'; reserve.textContent = 'Reservar';
+        reserve.addEventListener('click', () => guardarTurnoYRedirigir(
+          turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora,
+          Number(turno.precio) || 0, Number(turno.duracionTurno) || 60
+        ));
+        slot.append(description, reserve); popup.appendChild(slot);
+      }
+      return popup;
+    });
+  }
+  if (coordinates.length === 1) map.setView(coordinates[0], 14);
+  else if (coordinates.length > 1) map.fitBounds(coordinates, { padding: [24, 24], maxZoom: 14 });
+
 }
 
 // ==================================================

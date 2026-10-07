@@ -11,3 +11,5 @@ Para Chromium: `npx playwright install chromium` y `npm run test:browser`. El na
 El buscador también verifica bloqueo de submits duplicados, recuperación tras errores, mensajes de carga/vacío/resultado, aria-busy y acciones de reserva sin onclick interpolado. Chromium verifica estado vacío y ancho de 390 px sin desbordamiento; genera capturas de escritorio y móvil.
 
 Mi cuenta: pruebas de nombres con HTML almacenado, reservas pasadas sin acciones, bloqueo de solicitudes simultáneas, errores de conexión y rechazo de cancelación pagada, reintento de carga y enlaces HTTPS de pago mediante clic explícito (sin popup asíncrono). Horarios interpretados en Argentina independientemente de la zona del navegador.
+
+Mapa: agrupa turnos de una ubicación en un marcador y construye su contenido al abrirlo, con eventos DOM seguros y coordenadas validadas. Chromium usa Leaflet local y prueba apertura repetida. Destacados: enlaces HTTPS creados con DOM. SuperAdmin: las respuestas tardías no reemplazan otra sección seleccionada.

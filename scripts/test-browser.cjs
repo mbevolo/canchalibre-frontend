@@ -20,7 +20,7 @@ fs.mkdirSync(artifacts, { recursive: true });
  try {
   browser=await playwright.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH || undefined,args:process.env.CHROMIUM_ARGS ? JSON.parse(process.env.CHROMIUM_ARGS) : [],headless:true});
   const context=await browser.newContext({viewport:{width:1366,height:900}});
-  const calls=[],errors=[];
+  const calls=[],errors=[]; let showMapSlots=false;
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());
    if(url.origin==='http://127.0.0.1:4001') {
@@ -33,11 +33,13 @@ fs.mkdirSync(artifacts, { recursive: true });
     if(url.pathname==='/reservas/hold')body={mensaje:'Reserva enviada'};
     if(url.pathname==='/ubicaciones')body={Cordoba:['Villa Maria']};
     if(url.pathname==='/clubes'||url.pathname==='/turnos-generados'||url.pathname==='/api/me/reservas')body=[];
+    if(url.pathname==='/turnos-generados' && showMapSlots)body=[{canchaId:'123456789012345678901234',club:'club@test.local',deporte:'padel',fecha:'2030-01-10',hora:'10:00',precio:1000,duracionTurno:60,latitud:-32.4,longitud:-63.2},{canchaId:'123456789012345678901234',club:'club@test.local',deporte:'padel',fecha:'2030-01-10',hora:'11:00',precio:1000,duracionTurno:60,latitud:-32.4,longitud:-63.2}];
     if(url.pathname==='/api/me/reservas')body=[{_id:'browser-booking',tipo:'CONFIRMED',fecha:'2099-01-01',hora:'10:00',nombreClub:'Club <img src=x onerror=alert(1)>',nombreCancha:'Cancha de prueba',pagado:false},{_id:'past-booking',tipo:'CONFIRMED',fecha:'2000-01-01',hora:'10:00',nombreClub:'Club de prueba',nombreCancha:'Cancha de prueba',pagado:true}];
     if(url.pathname.endsWith('/payment-link'))body={pagoUrl:'https://checkout.test/pay'};
     await route.fulfill({status:200,headers,body:JSON.stringify(body)});return;
    }
    if(url.origin===base)return route.continue();
+   if(url.pathname.endsWith('/leaflet.js') || url.pathname.endsWith('/leaflet.css'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:fs.readFileSync(path.join(root,'node_modules/leaflet/dist/'+(url.pathname.endsWith('.css')?'leaflet.css':'leaflet.js')))});
    if(url.pathname.endsWith('/bootstrap.min.css'))return route.fulfill({status:200,contentType:'text/css',body:fs.readFileSync(path.join(root,'node_modules/bootstrap/dist/css/bootstrap.min.css'))});
    return route.fulfill({status:200,body:'',contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript'});
   });
@@ -51,6 +53,15 @@ fs.mkdirSync(artifacts, { recursive: true });
   assert.equal(await page.locator('.btn-buscar-turnos').isDisabled(),false);
   await page.screenshot({path:path.join(artifacts, 'web-index.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);await page.screenshot({path:path.join(artifacts,'web-index-mobile.png'),fullPage:true});await page.setViewportSize({width:1366,height:900});
+  showMapSlots=true;
+  await page.click('.btn-buscar-turnos');await page.getByRole('button',{name:'Ver en mapa'}).waitFor();
+  await page.getByRole('button',{name:'Ver en mapa'}).click();
+  assert.equal(await page.locator('.leaflet-marker-icon').count(),1);
+  await page.locator('.leaflet-marker-icon').click();
+  assert.equal(await page.locator('.leaflet-popup-content button').count(),2);
+  assert.equal(await page.locator('.leaflet-popup-content [onclick]').count(),0);
+  await page.getByRole('button',{name:'Ver en mapa'}).click();
+  assert.equal(await page.locator('#map').count(),1);
   await page.evaluate(()=>localStorage.setItem('turnoSeleccionado',JSON.stringify({canchaId:'123456789012345678901234',club:'club@test.local',deporte:'padel',fecha:'2030-01-10',hora:'10:00',precio:1000,duracionTurno:60})));
   await page.goto(base+'/detalle.html');await page.locator('#detalle h3').waitFor();
   assert.equal(await page.locator('option[value="online"]').count(),0);
