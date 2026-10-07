@@ -45,7 +45,9 @@
         <option value="">Seleccionar localidad</option>
       </select>
 
-      <input type="text" id="direccionClub" class="form-control" placeholder="Dirección (opcional)" disabled>
+      <input type="text" id="direccionClub" class="form-control" placeholder="Calle y número" disabled aria-describedby="direccion-mapa-estado">
+      <button type="button" id="buscar-direccion-mapa" class="btn btn-outline-primary mb-2">Buscar dirección en el mapa</button>
+      <p id="direccion-mapa-estado" class="small text-muted" role="status" aria-live="polite">Al editar, completá calle y número junto con localidad y provincia. Podés ajustar la ubicación en el mapa.</p>
       <input type="number" id="latitudClub" class="form-control" step="any" placeholder="Latitud" required disabled>
       <input type="number" id="longitudClub" class="form-control" step="any" placeholder="Longitud" required disabled>
 
@@ -201,6 +203,7 @@
   const btnGuardarClub = document.getElementById('btn-guardar-club');
 
   function modoLecturaClub() {
+    document.getElementById('buscar-direccion-mapa').disabled = true;
     camposClub.forEach(id => document.getElementById(id).disabled = true);
     document.getElementById('emailClub').disabled = true;
 
@@ -209,6 +212,7 @@
   }
 
   function modoEdicionClub() {
+    document.getElementById('buscar-direccion-mapa').disabled = false;
     camposClub.forEach(id => document.getElementById(id).disabled = false);
     document.getElementById('emailClub').disabled = true;
 
@@ -217,6 +221,75 @@
   }
 
   btnEditarClub.addEventListener('click', modoEdicionClub);
+  let addressSearchVersion = 0;
+  let addressController;
+  let lastAddressRequest = 0;
+  const addressCache = new Map();
+  const addressStatus = document.getElementById('direccion-mapa-estado');
+  function cancelarBusquedaDireccion() {
+    addressSearchVersion++;
+    addressController?.abort();
+    btnGuardarClub.disabled = false;
+  }
+  async function buscarDireccionMapa() {
+    if (document.getElementById('direccionClub').disabled) return;
+    cancelarBusquedaDireccion();
+    const version = addressSearchVersion;
+    const direccion = document.getElementById('direccionClub').value.trim();
+    const localidad = document.getElementById('localidadClub').value.trim();
+    const provincia = document.getElementById('provinciaClub').value.trim();
+    if (!direccion || !localidad || !provincia) {
+      addressStatus.textContent = 'Completá dirección, localidad y provincia para ubicar el club.';
+      return;
+    }
+    const query = `${direccion}, ${localidad}, ${provincia}, Argentina`;
+    addressStatus.textContent = 'Buscando la dirección en el mapa…';
+    btnGuardarClub.disabled = true;
+    addressController = new AbortController();
+    const controller = addressController;
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    try {
+      let data = addressCache.get(query);
+      if (!data) {
+        await new Promise(resolve => setTimeout(resolve, Math.max(0, 1100 - (Date.now() - lastAddressRequest))));
+        if (version !== addressSearchVersion) return;
+        lastAddressRequest = Date.now();
+        const response = await fetch((window.CL_GEOCODER_URL || 'https://photon.komoot.io/api/') + '?' + new URLSearchParams({q:query,limit:'1',countrycode:'AR'}), { signal: controller.signal });
+        if (!response.ok) throw new Error('No se pudo consultar el mapa');
+        const result = await response.json();
+        data = (result.features || []).map(feature => ({ lat: feature.geometry?.coordinates?.[1], lon: feature.geometry?.coordinates?.[0] }));
+        addressCache.set(query, data);
+      }
+      if (version !== addressSearchVersion) return;
+      const lat = Number(data[0]?.lat), lng = Number(data[0]?.lon);
+      if (!data.length || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+        addressStatus.textContent = 'No encontramos esa dirección. Revisala o marcá el punto exacto haciendo clic en el mapa.';
+        return;
+      }
+      map.setView([lat, lng], 16);
+      if (marker) marker.setLatLng([lat, lng]); else marker = L.marker([lat, lng]).addTo(map);
+      document.getElementById('latitudClub').value = lat.toFixed(6);
+      document.getElementById('longitudClub').value = lng.toFixed(6);
+      addressStatus.textContent = 'Ubicación aproximada encontrada. Revisá el marcador; podés ajustarlo con un clic en el mapa y guardar los cambios.';
+    } catch (error) {
+      if (version !== addressSearchVersion) return;
+      addressStatus.textContent = 'No pudimos buscar la dirección. Intentá nuevamente o marcá la ubicación en el mapa.';
+    } finally { clearTimeout(timeout); if (version === addressSearchVersion) btnGuardarClub.disabled = false; }
+  }
+  document.getElementById('direccionClub').addEventListener('input', () => {
+    cancelarBusquedaDireccion();
+    document.getElementById('latitudClub').value = '';
+    document.getElementById('longitudClub').value = '';
+    addressStatus.textContent = 'Al terminar de escribir y salir del campo, buscaremos la dirección.';
+  });
+  ['direccionClub', 'localidadClub', 'provinciaClub'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+    if (document.getElementById('direccionClub').disabled) return;
+    document.getElementById('latitudClub').value = '';
+    document.getElementById('longitudClub').value = '';
+    buscarDireccionMapa();
+  }));
+  document.getElementById('buscar-direccion-mapa').addEventListener('click', buscarDireccionMapa);
+
 
   // ==========================================================
   // 📌 Guardar datos del club
@@ -306,12 +379,14 @@
   document.addEventListener('DOMContentLoaded', async () => {
 
     map = L.map('map').setView([-34.6, -58.38], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
     map.on('click', function (e) {
       // Solo permitir mover marcador en modo edición de datos
       if (btnGuardarClub.style.display === "none") return;
 
+      cancelarBusquedaDireccion();
+      addressStatus.textContent = 'Ubicación ajustada manualmente. Guardá los cambios para actualizarla.';
       const { lat, lng } = e.latlng;
       if (marker) marker.setLatLng(e.latlng);
       else marker = L.marker(e.latlng).addTo(map);
