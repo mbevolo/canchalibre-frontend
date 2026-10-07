@@ -7,7 +7,45 @@
   document.getElementById('club-address').textContent=[club.direccion,club.localidad,club.provincia].filter(Boolean).join(' · ');
   document.getElementById('club-description').textContent=club.descripcion||'El club todavía no agregó una descripción.';
   const gallery=document.getElementById('club-gallery');
-  (club.fotos||[]).forEach((src,index)=>{if(!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(src))return;const img=document.createElement('img');img.src=src;img.alt=`${club.nombre} · Foto ${index+1}`;img.loading=index?'lazy':'eager';gallery.append(img);});
+  const photos=(club.fotos||[]).filter(src=>typeof src==='string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(src));
+  const dialog=document.getElementById('club-lightbox');
+  const enlarged=document.getElementById('lightbox-image');
+  const caption=document.getElementById('lightbox-caption');
+  const previous=document.getElementById('lightbox-prev');
+  const next=document.getElementById('lightbox-next');
+  let current=0, opener=null, oldOverflow='';
+  function showPhoto(index){
+    current=(index+photos.length)%photos.length;
+    enlarged.src=photos[current];
+    enlarged.alt=`${club.nombre} · Foto ${current+1}`;
+    caption.textContent=`${club.nombre} · ${current+1} de ${photos.length}`;
+  }
+  function openPhoto(index,button){
+    opener=button;showPhoto(index);
+    oldOverflow=document.body.style.overflow;
+    dialog.showModal();document.body.style.overflow='hidden';
+    document.getElementById('lightbox-close').focus();
+  }
+  document.getElementById('lightbox-close').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',()=>{document.body.style.overflow=oldOverflow;opener?.focus();});
+  dialog.addEventListener('click',event=>{
+    if(event.target!==dialog)return;
+    const bounds=dialog.getBoundingClientRect();
+    if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)dialog.close();
+  });
+  dialog.addEventListener('keydown',event=>{
+    if(event.key==='ArrowLeft'){event.preventDefault();showPhoto(current-1);}
+    if(event.key==='ArrowRight'){event.preventDefault();showPhoto(current+1);}
+  });
+  previous.addEventListener('click',()=>showPhoto(current-1));
+  next.addEventListener('click',()=>showPhoto(current+1));
+  previous.hidden=next.hidden=photos.length<2;
+  photos.forEach((src,index)=>{
+    const button=document.createElement('button');button.type='button';button.className='club-photo';
+    button.setAttribute('aria-label',`Ampliar foto ${index+1} de ${club.nombre}`);
+    const img=document.createElement('img');img.src=src;img.alt=`${club.nombre} · Foto ${index+1}`;img.loading=index?'lazy':'eager';
+    button.append(img);button.addEventListener('click',()=>openPhoto(index,button));gallery.append(button);
+  });
   if(!gallery.children.length)gallery.textContent='Próximamente: fotos del club.';
   (club.servicios||[]).forEach(service=>{const badge=document.createElement('span');badge.textContent=service;document.getElementById('club-services').append(badge);});
   document.getElementById('club-phone').textContent=club.telefono?'Contacto: '+club.telefono:'';
