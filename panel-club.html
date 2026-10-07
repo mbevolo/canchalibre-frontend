@@ -76,7 +76,12 @@
         <!-- INFO -->
         <div class="tab-pane fade show active" id="infoTab" role="tabpanel" aria-labelledby="info-tab">
           <div id="info-bienvenida" class="mb-3"></div>
-          <h5>Reservas para hoy</h5>
+          <section class="card p-3 mb-4"><h2 class="h4">Tu ficha pública</h2><p>Mostrá el club antes de que el usuario reserve. La primera foto será la portada.</p>
+<form id="perfil-publico"><label class="form-label" for="perfil-direccion">Dirección</label><input id="perfil-direccion" maxlength="250" class="form-control mb-3">
+<label class="form-label" for="perfil-descripcion">Sobre el club</label><textarea id="perfil-descripcion" maxlength="1500" class="form-control mb-3" rows="3"></textarea>
+<fieldset><legend class="h6">Servicios disponibles</legend><div id="perfil-servicios" class="d-flex flex-wrap gap-3 mb-3"></div></fieldset>
+<label class="form-label" for="perfil-fotos">Fotos del club (hasta 6)</label><input id="perfil-fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple class="form-control"><p class="small">Hasta 10 MB por archivo. Optimizamos las imágenes al cargarlas.</p><div id="perfil-galeria" class="d-flex flex-wrap gap-3 my-3"></div>
+<button class="btn btn-success" type="submit">Guardar ficha</button><p id="perfil-estado" role="status" class="mt-2"></p></form></section><h5>Reservas para hoy</h5>
           <div id="lista-reservas-hoy" class="mt-3"></div>
         </div>
 
@@ -338,5 +343,6 @@
 
     <script src="js/footer.js"></script>
 
-  </body>
+  <script src="js/club-profile.js"></script>
+</body>
 </html>

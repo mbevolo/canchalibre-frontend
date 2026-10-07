@@ -542,7 +542,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             turnoDiv.innerHTML = `
               <div class="slot-top"><span class="sport-tag">${sanitizeHTML(turno.deporte)}</span>${esDestacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div>
               <h3>${sanitizeHTML(clubInfo ? clubInfo.nombre : turno.club)}</h3>
-              <p class="slot-location">${sanitizeHTML(clubInfo?.localidad || '')}</p>
+              <p class="slot-location">${sanitizeHTML([clubInfo?.direccion, clubInfo?.localidad].filter(Boolean).join(' · '))}</p>
               <div class="slot-time"><strong>${sanitizeHTML(turno.hora)}</strong><span>${sanitizeHTML(formatFecha(turno.fecha))} · ${formatDuracion(turno.duracionTurno)}</span></div>
               <p class="slot-price">$${(Number(turno.precio) || 0).toLocaleString('es-AR')} <span>por turno</span></p>
             `;
@@ -554,6 +554,11 @@ window.addEventListener('DOMContentLoaded', async () => {
               turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora,
               Number(turno.precio) || 0, Number(turno.duracionTurno) || 60
             ));
+            const infoLink = document.createElement('a');
+            infoLink.href = 'club-info.html?club=' + encodeURIComponent(turno.club);
+            infoLink.textContent = 'Ver club, fotos y ubicación ↗';
+            infoLink.className = 'club-info-link';
+            turnoDiv.appendChild(infoLink);
             turnoDiv.appendChild(reserveButton);
             resultados.appendChild(turnoDiv);
           });
