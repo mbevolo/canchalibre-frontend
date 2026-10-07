@@ -1,3 +1,31 @@
+function showClubPaymentLink(data, reserva, nombreClub) {
+  const paymentUrl = new URL(data.pagoUrl);
+  if (paymentUrl.protocol !== 'https:') throw new Error('Enlace de pago inválido');
+  document.getElementById('club-payment-dialog')?.remove();
+  const dialog = document.createElement('dialog');
+  dialog.id = 'club-payment-dialog';
+  dialog.style.cssText = 'max-width:520px;width:90%;padding:24px;border:1px solid #ddd;border-radius:12px';
+  const title = document.createElement('h3'); title.textContent = 'Link de pago generado'; dialog.appendChild(title);
+  const link = document.createElement('a'); link.href = paymentUrl.href; link.textContent = paymentUrl.href;
+  link.target = '_blank'; link.rel = 'noopener noreferrer'; link.style.overflowWrap = 'anywhere'; dialog.appendChild(link);
+  const copy = document.createElement('button'); copy.textContent = 'Copiar enlace'; copy.className = 'btn btn-primary m-2';
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(paymentUrl.href); copy.textContent = 'Copiado'; } catch { copy.textContent = 'Seleccioná el enlace para copiarlo'; } }; dialog.appendChild(copy);
+  const original = reserva.telefonoReservado || reserva.usuarioId?.telefono || '';
+  let phone = String(original).replace(/[^0-9]/g, '');
+  if (phone.startsWith('0')) phone = phone.slice(1);
+  if (phone && !phone.startsWith('549')) phone = '549' + phone;
+  if (phone.length >= 12 && phone.length <= 15) {
+    const whatsapp = document.createElement('a');
+    const message = `Hola! Te compartimos el link para pagar tu reserva en ${nombreClub || reserva.club}:\n${reserva.fecha} ${reserva.hora} hs\n${reserva.deporte}\n${paymentUrl.href}`;
+    whatsapp.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+    whatsapp.textContent = 'Compartir por WhatsApp'; whatsapp.target = '_blank'; whatsapp.rel = 'noopener noreferrer'; whatsapp.className = 'btn btn-success m-2'; dialog.appendChild(whatsapp);
+  } else {
+    const note = document.createElement('p'); note.textContent = 'Podés copiar el enlace; no hay un teléfono válido para compartir por WhatsApp.'; dialog.appendChild(note);
+  }
+  const close = document.createElement('button'); close.textContent = 'Cerrar'; close.className = 'btn btn-secondary m-2'; close.onclick = () => { dialog.close(); dialog.remove(); }; dialog.appendChild(close);
+  document.body.appendChild(dialog); dialog.showModal();
+}
+
 function escapeClubHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 }
@@ -729,45 +757,13 @@ btnDescargarQR.addEventListener('click', () => {
                     return;
                   }
 
-                  const resReserva = await fetch(window.CanchaLibreApiUrl(`/reserva/${turno.realId}`));
+                  const resReserva = await fetch(window.CanchaLibreApiUrl(`/turnos/${turno.realId}`));
                   const reserva = await resReserva.json();
+                  if (!resReserva.ok) throw new Error(reserva.error || 'No se pudo consultar la reserva');
 
-                  let telefonoOriginal = reserva.usuarioId?.telefono || '';
-                  let telefono = String(telefonoOriginal).replace(/[^0-9]/g, '');
-                  if (!telefono) {
-                    alert('El usuario no tiene un número válido en su perfil.');
-                    return;
-                  }
-                  if (telefono.startsWith('0')) telefono = telefono.slice(1);
-                  if (!telefono.startsWith('549')) telefono = '549' + telefono;
-
-                  const nombreClub = clubData?.nombre || reserva.club;
-                  const [aa, mm, dd] = reserva.fecha.split('-');
-                  const fechaF = `${dd}/${mm}/${aa}`;
-
-                  const mensajeTexto =
-                    `Hola! Te compartimos el link para pagar tu reserva en ${nombreClub}:\n\n` +
-                    `📅 ${fechaF}\n` +
-                    `🕐 ${reserva.hora} hs\n` +
-                    `🏅 Deporte: ${reserva.deporte}\n\n` +
-                    `💳 Link de pago:\n${data.pagoUrl}`;
-
-                  const mensaje = encodeURIComponent(mensajeTexto);
-                  const linkWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-
-                  const popup = window.open('', '_blank', 'width=500,height=300');
-                  popup.document.write(`
-                    <html><head><title>Link de Pago</title></head>
-                    <body style="font-family: Arial; padding: 20px;">
-                      <h3>✅ Link de pago generado:</h3>
-                      <p><a href="${data.pagoUrl}" target="_blank">${data.pagoUrl}</a></p>
-                      <button onclick="navigator.clipboard.writeText('${data.pagoUrl}')">📋 Copiar enlace</button>
-                      <br><br>
-                      <a href="${linkWhatsapp}" target="_blank">📲 Enviar por WhatsApp</a>
-                    </body></html>
-                  `);
+                  showClubPaymentLink(data, reserva, clubData?.nombre);
                 } catch (err) {
-                  alert('Error generando el link de pago.');
+                  alert('Error generando el link de pago: ' + err.message);
                 }
               };
             }
@@ -997,14 +993,18 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       const confirmar = confirm('¿Estás seguro de que querés cancelar este turno?');
       if (!confirmar) return;
 
+      btnCancelarTurno.disabled = true;
+      try {
       const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turnoSeleccionado.realId}/cancelar`), {
         method: 'PATCH'
       });
-      if (!res.ok) throw new Error('Error al cancelar turno');
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Error al cancelar turno'); }
 
       modalTurno.hide();
       await cargarReservas();
       await cargarAgendas();
+      } catch (error) { alert(error.message || 'No se pudo cancelar el turno'); }
+      finally { btnCancelarTurno.disabled = false; }
     }
   });
 
@@ -1018,6 +1018,8 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       return alert('Todos los campos son obligatorios.');
     }
 
+    btnReservarTurno.disabled = true;
+    try {
     const res = await fetch(window.CanchaLibreApiUrl('/reservar-turno'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1029,16 +1031,19 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         precio: turnoSeleccionado.precio,
         usuarioReservado: nombreCliente,
         emailReservado: emailCliente,
+        telefonoReservado: telefonoCliente,
         metodoPago: 'efectivo',
         canchaId: turnoSeleccionado.canchaId
       })
     });
 
-    if (!res.ok) throw new Error('Error al reservar turno');
+    if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Error al reservar turno'); }
 
     modalTurno.hide();
     await cargarReservas();
     await cargarAgendas();
+    } catch (error) { alert(error.message || 'No se pudo reservar el turno'); }
+    finally { btnReservarTurno.disabled = false; }
   });
 
   // ============================
@@ -1128,7 +1133,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         <td>${fechaFormateada}</td>
         <td>${escapeClubHtml(r.hora)}</td>
         <td>
-          ${escapeClubHtml(r.usuarioNombre || '')} ${escapeClubHtml(r.usuarioApellido || '')}<br>
+          ${escapeClubHtml(r.usuarioNombre || r.usuarioReservado || '')} ${escapeClubHtml(r.usuarioApellido || '')}<br>
           📧 ${escapeClubHtml(r.usuarioEmail || r.emailReservado)}<br>
           ${htmlTelefono}
         </td>
@@ -1164,8 +1169,13 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         const id = btn.getAttribute('data-id');
         const confirmar = confirm('¿Estás seguro de que querés cancelar esta reserva?');
         if (!confirmar) return;
-        await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/cancelar`), { method: 'PATCH' });
-        await cargarReservas();
+        btn.disabled = true;
+        try {
+          const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/cancelar`), { method: 'PATCH' });
+          if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'No se pudo cancelar la reserva'); }
+          await cargarReservas();
+        } catch (error) { alert(error.message); }
+        finally { btn.disabled = false; }
       });
     });
 
@@ -1183,47 +1193,13 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
             return;
           }
 
-          const resReserva = await fetch(window.CanchaLibreApiUrl(`/reserva/${id}`));
+          const resReserva = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}`));
           const reserva = await resReserva.json();
+                  if (!resReserva.ok) throw new Error(reserva.error || 'No se pudo consultar la reserva');
 
-          let telefonoOriginal = reserva.usuarioId?.telefono || '';
-          let telefono = String(telefonoOriginal).replace(/[^0-9]/g, '');
-          if (!telefono) {
-            alert('El usuario no tiene un número válido en su perfil.');
-            return;
-          }
-          if (telefono.startsWith('0')) telefono = telefono.slice(1);
-          if (!telefono.startsWith('549')) telefono = '549' + telefono;
-
-          const nombreClub = clubData?.nombre || reserva.club;
-          const [anio, mes, dia] = reserva.fecha.includes('-')
-            ? reserva.fecha.split('-')
-            : [reserva.fecha.split('/')[2], reserva.fecha.split('/')[1], reserva.fecha.split('/')[0]];
-          const fechaFormateada = `${dia}/${mes}/${anio}`;
-
-          const mensajeTexto =
-            `Hola! Te compartimos el link para pagar tu reserva en ${nombreClub}:\n\n` +
-            `📅 ${fechaFormateada}\n` +
-            `🕐 ${reserva.hora} hs\n` +
-            `🏅 Deporte: ${reserva.deporte}\n\n` +
-            `💳 Link de pago:\n${data.pagoUrl}`;
-
-          const mensaje = encodeURIComponent(mensajeTexto);
-          const linkWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-
-          const popup = window.open('', '_blank', 'width=500,height=300');
-          popup.document.write(`
-            <html><head><title>Link de Pago</title></head>
-            <body style="font-family: Arial; padding: 20px;">
-              <h3>✅ Link de pago generado:</h3>
-              <p><a href="${data.pagoUrl}" target="_blank">${data.pagoUrl}</a></p>
-              <button onclick="navigator.clipboard.writeText('${data.pagoUrl}')">📋 Copiar enlace</button>
-              <br><br>
-              <a href="${linkWhatsapp}" target="_blank">📲 Enviar por WhatsApp</a>
-            </body></html>
-          `);
+          showClubPaymentLink(data, reserva, clubData?.nombre);
         } catch (err) {
-          alert('Error generando el link de pago.');
+          alert('Error generando el link de pago: ' + err.message);
         }
       });
     });
