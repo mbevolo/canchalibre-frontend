@@ -156,7 +156,9 @@
   async function cargarDatosClub() {
     try {
       const res = await fetch(window.CanchaLibreApiUrl('/api/club/me'), { headers: { Authorization: 'Bearer ' + (localStorage.getItem('clubToken') || '') } });
-      clubData = await res.json();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "No se pudieron cargar los datos");
+      clubData = result.club || result;
 
       document.getElementById('nombreClub').value = clubData.nombre || '';
       document.getElementById('emailClub').value = clubData.email || '';
@@ -222,12 +224,14 @@
   document.getElementById('form-editar-club').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    if (btnGuardarClub.disabled) return;
+    btnGuardarClub.disabled = true;
     const body = {
       nombre: document.getElementById('nombreClub').value,
       telefono: document.getElementById('telefonoClub').value,
       direccion: document.getElementById('direccionClub').value,
-      latitud: document.getElementById('latitudClub').value,
-      longitud: document.getElementById('longitudClub').value,
+      latitud: Number(document.getElementById('latitudClub').value),
+      longitud: Number(document.getElementById('longitudClub').value),
       provincia: document.getElementById('provinciaClub').value,
       localidad: document.getElementById('localidadClub').value,
     };
@@ -235,7 +239,7 @@
     try {
       const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubData._id}`), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + (localStorage.getItem("clubToken") || "") },
         body: JSON.stringify(body)
       });
 
@@ -243,6 +247,7 @@
 
       if (res.ok) {
         document.getElementById("alerta-edicion-club").classList.remove("d-none");
+        clubData = data.club || { ...clubData, ...body };
         modoLecturaClub();
       } else {
         alert(data.error || "Error al guardar datos");
@@ -250,7 +255,7 @@
 
     } catch (err) {
       alert('Error al guardar datos');
-    }
+    } finally { btnGuardarClub.disabled = false; }
   });
 
   // ==========================================================
@@ -283,7 +288,7 @@
 
     const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubData._id}/access-token`), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + (localStorage.getItem("clubToken") || "") },
       body: JSON.stringify({ accessToken: token })
     });
 

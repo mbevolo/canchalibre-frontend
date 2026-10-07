@@ -81,7 +81,7 @@
         <div class="tab-pane fade show active" id="infoTab" role="tabpanel" aria-labelledby="info-tab">
           <div id="info-bienvenida" class="mb-3"></div>
           <section class="card p-3 mb-4"><h2 class="h4">Tu ficha pública</h2><p>Mostrá el club antes de que el usuario reserve. La primera foto será la portada.</p>
-<form id="perfil-publico"><label class="form-label" for="perfil-direccion">Dirección</label><input id="perfil-direccion" maxlength="250" class="form-control mb-3">
+<form id="perfil-publico"><label class="form-label" for="perfil-direccion">Dirección</label><input id="perfil-direccion" maxlength="250" class="form-control" readonly aria-describedby="perfil-direccion-ayuda"><p id="perfil-direccion-ayuda" class="small mt-2 mb-3">La dirección y la ubicación se editan desde <a href="mis-datos.html">Mis Datos</a>.</p>
 <label class="form-label" for="perfil-descripcion">Sobre el club</label><textarea id="perfil-descripcion" maxlength="1500" class="form-control mb-3" rows="3"></textarea>
 <fieldset><legend class="h6">Servicios disponibles</legend><div id="perfil-servicios" class="d-flex flex-wrap gap-3 mb-3"></div></fieldset>
 <label class="form-label" for="perfil-fotos">Fotos del club (hasta 6)</label><input id="perfil-fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple class="form-control"><p class="small">Hasta 10 MB por archivo. Optimizamos las imágenes al cargarlas.</p><div id="perfil-galeria" class="d-flex flex-wrap gap-3 my-3"></div>
