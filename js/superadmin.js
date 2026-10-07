@@ -1,3 +1,7 @@
+function escapeAdminHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
   const menu = document.getElementById('menu-superadmin');
@@ -99,9 +103,9 @@ async function cargarClubes() {
     data.clubes.forEach(club => {
       tabla += `
         <tr>
-          <td><input type="text" value="${club.nombre || ''}" class="form-control club-nombre" data-id="${club._id}"></td>
-          <td><input type="email" value="${club.email || ''}" class="form-control club-email" data-id="${club._id}"></td>
-          <td><input type="text" value="${club.telefono || ''}" class="form-control club-telefono" data-id="${club._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(club.nombre || '')}" class="form-control club-nombre" data-id="${club._id}"></td>
+          <td><input type="email" value="${escapeAdminHtml(club.email || '')}" class="form-control club-email" data-id="${club._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(club.telefono || '')}" class="form-control club-telefono" data-id="${club._id}"></td>
           <td>
             <span class="badge ${club.activo !== false ? 'bg-success' : 'bg-secondary'}">${club.activo !== false ? "Activo" : "Suspendido"}</span>
           </td>
@@ -192,7 +196,7 @@ async function cargarClubes() {
     });
 
   } catch (error) {
-    content.innerHTML = `<h2>Gestión de Clubes</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Gestión de Clubes</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
@@ -232,10 +236,10 @@ async function cargarClubes() {
     data.usuarios.forEach(usuario => {
       tabla += `
         <tr>
-          <td><input type="text" value="${usuario.nombre || ''}" class="form-control usuario-nombre" data-id="${usuario._id}"></td>
-          <td><input type="text" value="${usuario.apellido || ''}" class="form-control usuario-apellido" data-id="${usuario._id}"></td>
-          <td><input type="email" value="${usuario.email || ''}" class="form-control usuario-email" data-id="${usuario._id}"></td>
-          <td><input type="text" value="${usuario.telefono || ''}" class="form-control usuario-telefono" data-id="${usuario._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(usuario.nombre || '')}" class="form-control usuario-nombre" data-id="${usuario._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(usuario.apellido || '')}" class="form-control usuario-apellido" data-id="${usuario._id}"></td>
+          <td><input type="email" value="${escapeAdminHtml(usuario.email || '')}" class="form-control usuario-email" data-id="${usuario._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(usuario.telefono || '')}" class="form-control usuario-telefono" data-id="${usuario._id}"></td>
           <td>
             <span class="badge ${usuario.activo !== false ? 'bg-success' : 'bg-secondary'}">${usuario.activo !== false ? "Activo" : "Suspendido"}</span>
           </td>
@@ -327,7 +331,7 @@ async function cargarClubes() {
     });
 
   } catch (error) {
-    content.innerHTML = `<h2>Gestión de Usuarios</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Gestión de Usuarios</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
@@ -368,12 +372,12 @@ async function cargarClubes() {
     data.reservas.forEach(r => {
       tabla += `
         <tr>
-          <td><input type="text" value="${r.deporte || ''}" class="form-control reserva-deporte" data-id="${r._id}"></td>
-          <td><input type="text" value="${r.fecha || ''}" class="form-control reserva-fecha" data-id="${r._id}"></td>
-          <td><input type="text" value="${r.hora || ''}" class="form-control reserva-hora" data-id="${r._id}"></td>
-          <td><input type="text" value="${r.club || ''}" class="form-control reserva-club" data-id="${r._id}"></td>
-          <td><input type="text" value="${r.usuarioReservado || ''}" class="form-control reserva-usuario" data-id="${r._id}"></td>
-          <td><input type="text" value="${r.emailReservado || ''}" class="form-control reserva-email" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.deporte || '')}" class="form-control reserva-deporte" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.fecha || '')}" class="form-control reserva-fecha" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.hora || '')}" class="form-control reserva-hora" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.club || '')}" class="form-control reserva-club" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.usuarioReservado || '')}" class="form-control reserva-usuario" data-id="${r._id}"></td>
+          <td><input type="text" value="${escapeAdminHtml(r.emailReservado || '')}" class="form-control reserva-email" data-id="${r._id}"></td>
           <td><input type="text" value="" class="form-control reserva-telefono" data-id="${r._id}"></td>
           <td>
             <span class="badge ${r.pagado ? 'bg-success' : 'bg-secondary'}">${r.pagado ? 'Sí' : 'No'}</span>
@@ -469,7 +473,7 @@ async function cargarClubes() {
     });
 
   } catch (error) {
-    content.innerHTML = `<h2>Gestión de Reservas</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Gestión de Reservas</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
@@ -508,12 +512,12 @@ async function cargarPagos() {
     data.pagos.forEach(pago => {
       tabla += `
         <tr>
-          <td>${pago.fecha || ''}</td>
-          <td>${pago.hora || ''}</td>
-          <td>${pago.club || ''}</td>
-          <td>${pago.deporte || ''}</td>
-          <td>${pago.usuarioReservado || ''}</td>
-          <td>${pago.emailReservado || ''}</td>
+          <td>${escapeAdminHtml(pago.fecha || '')}</td>
+          <td>${escapeAdminHtml(pago.hora || '')}</td>
+          <td>${escapeAdminHtml(pago.club || '')}</td>
+          <td>${escapeAdminHtml(pago.deporte || '')}</td>
+          <td>${escapeAdminHtml(pago.usuarioReservado || '')}</td>
+          <td>${escapeAdminHtml(pago.emailReservado || '')}</td>
           <td>${pago.precio ? '$' + pago.precio : ''}</td>
         </tr>
       `;
@@ -523,7 +527,7 @@ async function cargarPagos() {
     content.innerHTML = tabla;
 
   } catch (error) {
-    content.innerHTML = `<h2>Pagos y Finanzas</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Pagos y Finanzas</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 
@@ -559,10 +563,10 @@ async function cargarDestacados() {
     data.destacados.forEach(club => {
       tabla += `
         <tr>
-          <td>${club.nombre}</td>
-          <td>${club.email}</td>
+          <td>${escapeAdminHtml(club.nombre)}</td>
+          <td>${escapeAdminHtml(club.email)}</td>
           <td>${club.destacadoHasta ? (new Date(club.destacadoHasta)).toLocaleDateString('es-AR') : ''}</td>
-          <td><button class="btn btn-sm btn-warning quitar-destacado" data-email="${club.email}">Quitar destacado</button></td>
+          <td><button class="btn btn-sm btn-warning quitar-destacado" data-email="${escapeAdminHtml(club.email)}">Quitar destacado</button></td>
         </tr>
       `;
     });
@@ -598,7 +602,7 @@ async function cargarDestacados() {
     });
 
   } catch (error) {
-    content.innerHTML = `<h2>Clubes Destacados</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Clubes Destacados</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 async function cargarConfiguraciones() {
@@ -618,11 +622,11 @@ async function cargarConfiguraciones() {
       <form id="form-config" class="mb-3">
         <div class="mb-2">
           <label>Precio para destacar club ($):</label>
-          <input type="number" class="form-control" id="precioDestacado" value="${precioDestacado}" min="0">
+          <input type="number" class="form-control" id="precioDestacado" value="${precioDestacado}" min="0.01" step="0.01" required>
         </div>
         <div class="mb-2">
           <label>Días de duración del destacado:</label>
-          <input type="number" class="form-control" id="diasDestacado" value="${diasDestacado}" min="1">
+          <input type="number" class="form-control" id="diasDestacado" value="${diasDestacado}" min="1" max="365" step="1" required>
         </div>
         <button type="submit" class="btn btn-primary mt-2">Guardar cambios</button>
         <div id="config-alerta" class="mt-2"></div>
@@ -642,21 +646,21 @@ async function cargarConfiguraciones() {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ precioDestacado: precio, diasDestacado: dias })
+          body: JSON.stringify({ precioDestacado: Number(precio), diasDestacado: Number(dias) })
         });
         const data = await res.json();
         if (data.ok) {
           alerta.innerHTML = `<div class="alert alert-success">¡Configuración actualizada!</div>`;
         } else {
-          alerta.innerHTML = `<div class="alert alert-danger">${data.msg}</div>`;
+          alerta.innerHTML = `<div class="alert alert-danger">${escapeAdminHtml(data.msg)}</div>`;
         }
       } catch (err) {
-        alerta.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+        alerta.innerHTML = `<div class="alert alert-danger">Error: ${escapeAdminHtml(err.message)}</div>`;
       }
     });
 
   } catch (error) {
-    content.innerHTML = `<h2>Configuraciones Globales</h2><div class="alert alert-danger">Error: ${error.message}</div>`;
+    content.innerHTML = `<h2>Configuraciones Globales</h2><div class="alert alert-danger">Error: ${escapeAdminHtml(error.message)}</div>`;
   }
 }
 

@@ -1,3 +1,7 @@
+function escapeClubHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+}
+
 // V2: adjuntar automáticamente el JWT del club a las llamadas protegidas del panel.
 (() => {
   const originalFetch = window.fetch.bind(window);
@@ -373,7 +377,7 @@ btnDescargarQR.addEventListener('click', () => {
     if (bienvenida) {
       bienvenida.innerHTML = `
         <div class="alert alert-info">
-          Bienvenido, <strong>${clubData.nombre}</strong>. Hoy hay reservas activas para tus canchas.
+          Bienvenido, <strong>${escapeClubHtml(clubData.nombre)}</strong>. Hoy hay reservas activas para tus canchas.
         </div>
       `;
       await cargarReservasHoy();
@@ -412,6 +416,7 @@ btnDescargarQR.addEventListener('click', () => {
   const btnCerrar = document.getElementById('cerrar-sesion');
   if (btnCerrar) {
     btnCerrar.addEventListener('click', () => {
+      localStorage.removeItem('clubToken');
       localStorage.removeItem('clubNombre');
       localStorage.removeItem('clubEmail');
       localStorage.removeItem('clubId');
@@ -548,8 +553,8 @@ btnDescargarQR.addEventListener('click', () => {
       div.innerHTML = `
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">${cancha.nombre}</h5>
-            <p><strong>Deporte:</strong> ${cancha.deporte}</p>
+            <h5 class="card-title">${escapeClubHtml(cancha.nombre)}</h5>
+            <p><strong>Deporte:</strong> ${escapeClubHtml(cancha.deporte)}</p>
             <p><strong>Precio:</strong> $${cancha.precio || '0'}/hora</p>
             <p><strong>Horario:</strong> ${cancha.horaDesde || '08:00'} a ${cancha.horaHasta || '22:00'}</p>
             <p><strong>Duración:</strong> ${(cancha.duracionTurno || 60)} min</p>
@@ -633,7 +638,7 @@ btnDescargarQR.addEventListener('click', () => {
     canchas.forEach((cancha, i) => {
       const opt = document.createElement('option');
       opt.value = cancha._id;
-      opt.textContent = `${cancha.nombre} (${cancha.deporte})`;
+      opt.textContent = `${escapeClubHtml(cancha.nombre)} (${escapeClubHtml(cancha.deporte)})`;
       if (i === 0) opt.selected = true;
       selectCancha.appendChild(opt);
     });
@@ -682,9 +687,9 @@ btnDescargarQR.addEventListener('click', () => {
             }
 
             turnoDetalleBody.innerHTML = `
-              <p><strong>Usuario:</strong> ${turno.usuarioReservado}</p>
+              <p><strong>Usuario:</strong> ${escapeClubHtml(turno.usuarioReservado)}</p>
               <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-              <p><strong>Hora:</strong> ${turno.hora} hs</p>
+              <p><strong>Hora:</strong> ${escapeClubHtml(turno.hora)} hs</p>
               <p><strong>Estado:</strong> ${turno.pagado ? 'Pagado' : 'Pendiente de pago'}</p>
               <div class="mt-2">${botonesDetalle}</div>
             `;
@@ -694,7 +699,7 @@ btnDescargarQR.addEventListener('click', () => {
           } else {
             turnoDetalleBody.innerHTML = `
               <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-              <p><strong>Hora:</strong> ${turno.hora} hs</p>
+              <p><strong>Hora:</strong> ${escapeClubHtml(turno.hora)} hs</p>
               <p>Este turno está libre.</p>
               <input type="text" id="nombreCliente" placeholder="Nombre del cliente" class="form-control mb-2">
               <input type="text" id="telefonoCliente" placeholder="Teléfono del cliente" class="form-control mb-2">
@@ -714,7 +719,7 @@ btnDescargarQR.addEventListener('click', () => {
             if (btnPago) {
               btnPago.onclick = async () => {
                 try {
-                  const res = await fetch(window.CanchaLibreApiUrl(`/generar-link-pago/${turno.realId}`), {
+                  const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turno.realId}/payment-link`), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                   });
@@ -863,8 +868,9 @@ btnDescargarQR.addEventListener('click', () => {
       marcarError(precioInput, 'Debe ser un número mayor que 0');
     }
 
-    const desde = parseInt(horaDesde.split(':')[0]);
-    const hasta = parseInt(horaHasta.split(':')[0]);
+    const toMinutes = value => { const [h, m] = value.split(':').map(Number); return h * 60 + m; };
+    const desde = toMinutes(horaDesde);
+    const hasta = toMinutes(horaHasta);
     if (horaDesde && horaHasta && hasta <= desde) {
       marcarError(horaHastaInput, '"Hasta" debe ser mayor que "Desde"');
     }
@@ -896,11 +902,12 @@ btnDescargarQR.addEventListener('click', () => {
       });
       if (!res.ok) throw new Error('Error al actualizar cancha');
     } else {
-      await fetch(window.CanchaLibreApiUrl('/canchas'), {
+      const res = await fetch(window.CanchaLibreApiUrl('/canchas'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(canchaData)
       });
+      if (!res.ok) { const data = await res.json(); alert(data.error || 'Error al crear cancha'); return; }
     }
 
     modal.hide();
@@ -962,7 +969,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         const checkbox = document.getElementById(`dia-${dia}`);
         if (checkbox) {
           checkbox.checked = cancha.diasDisponibles
-            ? cancha.diasDisponibles.includes(capitalize(dia))
+            ? cancha.diasDisponibles.some(value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === dia)
             : true;
         }
       });
@@ -1104,7 +1111,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       if (telefonoWa) {
         htmlTelefono = `
           📱 <a href="https://wa.me/${telefonoWa}" target="_blank" style="text-decoration: none;">
-            ${telefonoReserva} ${iconoWhatsApp}
+            ${escapeClubHtml(telefonoReserva)} ${iconoWhatsApp}
           </a>
         `;
       } else {
@@ -1117,12 +1124,12 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${r.nombreCancha || 'Sin nombre'}</td>
+        <td>${escapeClubHtml(r.nombreCancha || 'Sin nombre')}</td>
         <td>${fechaFormateada}</td>
-        <td>${r.hora}</td>
+        <td>${escapeClubHtml(r.hora)}</td>
         <td>
-          ${r.usuarioNombre || ''} ${r.usuarioApellido || ''}<br>
-          📧 ${r.usuarioEmail || r.emailReservado}<br>
+          ${escapeClubHtml(r.usuarioNombre || '')} ${escapeClubHtml(r.usuarioApellido || '')}<br>
+          📧 ${escapeClubHtml(r.usuarioEmail || r.emailReservado)}<br>
           ${htmlTelefono}
         </td>
         <td>${estadoPago}</td>
@@ -1141,10 +1148,10 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${r.nombreCancha || 'Sin nombre'}</td>
+          <td>${escapeClubHtml(r.nombreCancha || 'Sin nombre')}</td>
           <td>${fechaFormateada}</td>
-          <td>${r.hora}</td>
-          <td>${r.emailReservado}</td>
+          <td>${escapeClubHtml(r.hora)}</td>
+          <td>${escapeClubHtml(r.emailReservado)}</td>
           <td>${estadoPago}</td>
         `;
         historialList.appendChild(row);
@@ -1166,7 +1173,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(window.CanchaLibreApiUrl(`/generar-link-pago/${id}`), {
+          const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/payment-link`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1376,7 +1383,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         const telefono = r.usuarioTelefono || r.usuario?.telefono || r.usuarioId?.telefono || '';
 
         div.innerHTML = `
-          <strong>${r.hora} hs</strong> - <b>${r.nombreCancha || 'Cancha'}</b><br>
+          <strong>${escapeClubHtml(r.hora)} hs</strong> - <b>${escapeClubHtml(r.nombreCancha || 'Cancha')}</b><br>
           ${nombre.trim() || '-'} ${telefono ? ' - ' + telefono : ''}<br>
           Estado: <b>${r.pagado ? 'Pagado' : 'Pendiente'}</b>
         `;

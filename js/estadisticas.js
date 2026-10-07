@@ -8,7 +8,6 @@ let chartOcupacion = null;
 (function () {
   const API = (window.API_BASE_URL || window.CanchaLibreApiUrl("")).replace(/\/$/, "");
 
-  document.addEventListener("DOMContentLoaded", init);
 
 let token = null; // 🔹 variable global disponible para todo el script
 
