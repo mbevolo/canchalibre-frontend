@@ -616,6 +616,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       const botonConfirmar = document.getElementById('confirmar-reserva');
       if (botonConfirmar) {
         botonConfirmar.addEventListener('click', async function () {
+          if (botonConfirmar.disabled) return;
+          botonConfirmar.disabled = true;
 
           try {
 const selectPago = document.getElementById('metodo-pago');
@@ -645,6 +647,8 @@ const respuesta = await auth.authFetch('/reservas/hold', {
           } catch (error) {
             console.error('❌ Error en /reservas/hold:', error);
             alert('❌ No se pudo conectar con el servidor.');
+          } finally {
+            botonConfirmar.disabled = false;
           }
         });
       }
