@@ -11,6 +11,15 @@ function load(window) {
 test('default configuration keeps existing API', () => {
   assert.equal(load({}).CanchalibreAuth.apiUrl('/auth/me'), 'https://api.canchalibre.ar/auth/me');
 });
+test('test deployment proxies authentication while reservations use the API', () => {
+  const window = load({
+    API_BASE_URL: 'https://canchalibre-backend-v2-test.onrender.com',
+    location: { hostname: 'canchalibre-frontend-v2-test.vercel.app', origin: 'https://canchalibre-frontend-v2-test.vercel.app' }
+  });
+  assert.equal(window.CanchalibreAuth.apiUrl('/auth/refresh'), 'https://canchalibre-frontend-v2-test.vercel.app/auth/refresh');
+  assert.equal(window.CanchalibreAuth.apiUrl('/reservas/hold'), 'https://canchalibre-backend-v2-test.onrender.com/reservas/hold');
+  assert.equal(window.CanchalibreAuth.apiUrl('/registrar'), 'https://canchalibre-backend-v2-test.onrender.com/registrar');
+});
 test('local API override is preserved and used by authentication', () => {
   const window = load({ API_BASE_URL: 'http://localhost:3001/' });
   assert.equal(window.CanchalibreAuth.apiUrl('/reservas/hold'), 'http://localhost:3001/reservas/hold');

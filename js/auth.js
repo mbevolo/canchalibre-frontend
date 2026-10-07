@@ -6,8 +6,9 @@ if (!window.__AUTH_BASE__) {
 }
 
 function apiUrl(path) {
-  const base = window.__AUTH_BASE__.replace(/\/+$/, '');
   const p = String(path || '').startsWith('/') ? path : '/' + (path || '');
+  const base = String(/^\/auth(?:\/|$)/.test(p) && window.AUTH_BASE_URL
+    ? window.AUTH_BASE_URL : window.__AUTH_BASE__).replace(/\/+$/, '');
   return base + p;
 }
 

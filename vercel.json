@@ -1,0 +1,15 @@
+{
+  "rewrites": [
+    {
+      "source": "/auth/:path*",
+      "has": [{ "type": "host", "value": "canchalibre-frontend-v2-test.vercel.app" }],
+      "destination": "https://canchalibre-backend-v2-test.onrender.com/auth/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/auth/:path*",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ]
+}
