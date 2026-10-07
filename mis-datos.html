@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8">
   <title>Mis Datos - Club</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -107,7 +108,7 @@
     localidadSelect.disabled = true;
 
     try {
-      const res = await fetch('https://api.canchalibre.ar/ubicaciones');
+      const res = await fetch(window.CanchaLibreApiUrl('/ubicaciones'));
       const data = await res.json();
 
       provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
@@ -148,7 +149,7 @@
   // ==========================================================
   async function cargarDatosClub() {
     try {
-      const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
+      const res = await fetch(window.CanchaLibreApiUrl('/api/club/me'), { headers: { Authorization: 'Bearer ' + (localStorage.getItem('clubToken') || '') } });
       clubData = await res.json();
 
       document.getElementById('nombreClub').value = clubData.nombre || '';
@@ -226,7 +227,7 @@
     };
 
     try {
-      const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
+      const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubData._id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -274,7 +275,7 @@
     const token = inputToken.value.trim();
     if (!token) return alert("Debes ingresar el Access Token");
 
-    const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}/access-token`, {
+    const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubData._id}/access-token`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken: token })

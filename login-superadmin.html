@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8">
   <title>Login SuperAdmin</title>
   <link href="css/style.css" rel="stylesheet">
@@ -21,7 +22,7 @@
       const alerta = document.getElementById('alerta');
       alerta.innerHTML = '';
 
-      const res = await fetch('https://api.canchalibre.ar/superadmin/login', {
+      const res = await fetch(window.CanchaLibreApiUrl('/superadmin/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

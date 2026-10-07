@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Restablecer contraseña - CanchaLibre</title>
@@ -56,7 +57,7 @@
 
       try {
         const endpoint = tipo === 'club' ? '/reset-club' : '/reset';
-        const res = await fetch('https://api.canchalibre.ar' + endpoint, {
+        const res = await fetch(window.CanchaLibreApiUrl('') + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, nuevaPassword })

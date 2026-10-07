@@ -6,7 +6,7 @@ let chartHoras = null;
 let chartOcupacion = null;
 
 (function () {
-  const API = (window.API_BASE_URL || "https://api.canchalibre.ar").replace(/\/$/, "");
+  const API = (window.API_BASE_URL || window.CanchaLibreApiUrl("")).replace(/\/$/, "");
 
   document.addEventListener("DOMContentLoaded", init);
 

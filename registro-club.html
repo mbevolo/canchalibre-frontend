@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registro de Club - CanchaLibre</title>
@@ -134,7 +135,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-  const API_BASE_URL = "https://api.canchalibre.ar";
+  const API_BASE_URL = window.CanchaLibreApiUrl("");
   let map, marker, ubicacionesData;
 
   // Inicializar mapa

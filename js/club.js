@@ -5,7 +5,7 @@
     try {
       const url = typeof input === 'string' ? input : input.url;
       const token = localStorage.getItem('clubToken');
-      if (token && url && url.startsWith('https://api.canchalibre.ar/')) {
+      if (token && url && url.startsWith(window.CanchaLibreApiUrl('/'))) {
         const headers = new Headers(
           init.headers || (typeof input !== 'string' && input.headers) || {}
         );
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function cargarCanchas() {
         canchasList.innerHTML = '';
-        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
+        const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
         const canchas = await res.json();
         canchas.forEach(c => {
             const item = document.createElement('div');
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <button class="btn btn-sm btn-danger" data-id="${c._id}">Eliminar</button>
             `;
             item.querySelector('button').addEventListener('click', async () => {
-                await fetch(`https://api.canchalibre.ar/canchas/${c._id}`, { method: 'DELETE' });
+                await fetch(window.CanchaLibreApiUrl(`/canchas/${c._id}`), { method: 'DELETE' });
                 cargarCanchas();
             });
             canchasList.appendChild(item);
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const precio = document.getElementById('precio-cancha').value;
         const horario = document.getElementById('horario-cancha').value;
 
-        await fetch('https://api.canchalibre.ar/canchas', {
+        await fetch(window.CanchaLibreApiUrl('/canchas'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, deporte, precio, horario, clubEmail })

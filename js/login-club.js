@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password').value.trim();
 
             try {
-                const res = await fetch('https://api.canchalibre.ar/login-club', {
+                const res = await fetch(window.CanchaLibreApiUrl('/login-club'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const res = await fetch('https://api.canchalibre.ar/club/reenviar-verificacion', {
+                const res = await fetch(window.CanchaLibreApiUrl('/club/reenviar-verificacion'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })

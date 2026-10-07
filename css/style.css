@@ -492,3 +492,7 @@ body {
     max-height: 180px;    /* clave para que no tape arriba */
   }
 }
+
+.pagina-detalle header p {
+  color: #4b5563;
+}

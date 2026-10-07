@@ -5,7 +5,7 @@
     try {
       const url = typeof input === 'string' ? input : input.url;
       const token = localStorage.getItem('clubToken');
-      if (token && url && url.startsWith('https://api.canchalibre.ar/')) {
+      if (token && url && url.startsWith(window.CanchaLibreApiUrl('/'))) {
         const headers = new Headers(
           init.headers || (typeof input !== 'string' && input.headers) || {}
         );
@@ -28,7 +28,7 @@ let DIAS_DESTACADO = 30;
 // Función global para cargar valores desde el backend
 async function cargarConfigDestacado() {
   try {
-    const res = await fetch('https://api.canchalibre.ar/configuracion-destacado');
+    const res = await fetch(window.CanchaLibreApiUrl('/configuracion-destacado'));
     const data = await res.json();
     PRECIO_DESTACADO = data.precioDestacado;
     DIAS_DESTACADO = data.diasDestacado;
@@ -292,7 +292,7 @@ btnDescargarQR.addEventListener('click', () => {
           btn.disabled = true;
           btn.textContent = 'Generando link...';
           try {
-            const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/destacar-pago`, {
+            const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubEmail}/destacar-pago`), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' }
             });
@@ -335,7 +335,7 @@ btnDescargarQR.addEventListener('click', () => {
           btn.disabled = true;
           btn.textContent = 'Generando link...';
           try {
-            const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/destacar-pago`, {
+            const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubEmail}/destacar-pago`), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' }
             });
@@ -365,7 +365,7 @@ btnDescargarQR.addEventListener('click', () => {
   // Cargar datos club
   // ============================
   try {
-    const resClub = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
+    const resClub = await fetch(window.CanchaLibreApiUrl(`/club/${clubEmail}`));
     clubData = await resClub.json();
 
     // Mostrar mensaje de bienvenida (solo si existe el div en esta página)
@@ -429,7 +429,7 @@ btnDescargarQR.addEventListener('click', () => {
 
     let marker;
     try {
-      const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
+      const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubEmail}`));
       if (!res.ok) throw new Error('Error al cargar club');
       const club = await res.json();
 
@@ -457,7 +457,9 @@ btnDescargarQR.addEventListener('click', () => {
       const token = document.getElementById('input-access-token').value.trim();
       if (!token) return alert('Debes ingresar el Access Token');
 
-      const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}/access-token`, {
+      const id = clubData?._id || localStorage.getItem('clubId');
+      if (!id) return alert('Volvé a iniciar sesión como club.');
+      const res = await fetch(window.CanchaLibreApiUrl(`/club/${id}/access-token`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessToken: token })
@@ -536,7 +538,7 @@ btnDescargarQR.addEventListener('click', () => {
     if (!canchasList) return;
 
     canchasList.innerHTML = '';
-    const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
+    const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
     if (!res.ok) throw new Error('Error al cargar canchas');
     const canchas = await res.json();
 
@@ -569,7 +571,7 @@ btnDescargarQR.addEventListener('click', () => {
   // ========== AGENDA ==========
   async function cargarEventosSemana(canchaId, fechaInicioSemana) {
     const fechaParam = (fechaInicioSemana || '').split('T')[0];
-    const res = await fetch(`https://api.canchalibre.ar/turnos-generados?fecha=${fechaParam}`);
+    const res = await fetch(window.CanchaLibreApiUrl(`/turnos-generados?fecha=${fechaParam}`));
     const turnos = await res.json();
     const canchaTurnos = turnos.filter(t => t.canchaId?.toString() === canchaId.toString());
 
@@ -620,7 +622,7 @@ btnDescargarQR.addEventListener('click', () => {
     // Evitar duplicados
     selectCancha.innerHTML = '';
 
-    const resCanchas = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
+    const resCanchas = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
     const canchas = await resCanchas.json();
 
     if (!canchas || canchas.length === 0) {
@@ -712,7 +714,7 @@ btnDescargarQR.addEventListener('click', () => {
             if (btnPago) {
               btnPago.onclick = async () => {
                 try {
-                  const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${turno.realId}`, {
+                  const res = await fetch(window.CanchaLibreApiUrl(`/generar-link-pago/${turno.realId}`), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                   });
@@ -722,7 +724,7 @@ btnDescargarQR.addEventListener('click', () => {
                     return;
                   }
 
-                  const resReserva = await fetch(`https://api.canchalibre.ar/reserva/${turno.realId}`);
+                  const resReserva = await fetch(window.CanchaLibreApiUrl(`/reserva/${turno.realId}`));
                   const reserva = await resReserva.json();
 
                   let telefonoOriginal = reserva.usuarioId?.telefono || '';
@@ -771,7 +773,7 @@ btnDescargarQR.addEventListener('click', () => {
                 if (!confirmar) return;
 
                 try {
-                  const res = await fetch(`https://api.canchalibre.ar/turnos/${turno.realId}/marcar-pagado`, {
+                  const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turno.realId}/marcar-pagado`), {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' }
                   });
@@ -887,14 +889,14 @@ btnDescargarQR.addEventListener('click', () => {
     };
 
     if (editandoCanchaId) {
-      const res = await fetch(`https://api.canchalibre.ar/canchas/${editandoCanchaId}`, {
+      const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${editandoCanchaId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(canchaData)
       });
       if (!res.ok) throw new Error('Error al actualizar cancha');
     } else {
-      await fetch('https://api.canchalibre.ar/canchas', {
+      await fetch(window.CanchaLibreApiUrl('/canchas'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(canchaData)
@@ -907,7 +909,7 @@ btnDescargarQR.addEventListener('click', () => {
 
   // Editar cancha
   window.editarCancha = async function (id) {
-    const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
+    const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
     if (!res.ok) throw new Error('Error al cargar canchas');
     const canchas = await res.json();
 
@@ -974,7 +976,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
   // Eliminar cancha
   window.eliminarCancha = async function (id) {
     try {
-      const res = await fetch(`https://api.canchalibre.ar/canchas/${id}`, { method: 'DELETE' });
+      const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${id}`), { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar cancha');
       await cargarCanchas();
     } catch (error) {
@@ -988,7 +990,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       const confirmar = confirm('¿Estás seguro de que querés cancelar este turno?');
       if (!confirmar) return;
 
-      const res = await fetch(`https://api.canchalibre.ar/turnos/${turnoSeleccionado.realId}/cancelar`, {
+      const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${turnoSeleccionado.realId}/cancelar`), {
         method: 'PATCH'
       });
       if (!res.ok) throw new Error('Error al cancelar turno');
@@ -1009,7 +1011,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       return alert('Todos los campos son obligatorios.');
     }
 
-    const res = await fetch('https://api.canchalibre.ar/reservar-turno', {
+    const res = await fetch(window.CanchaLibreApiUrl('/reservar-turno'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1043,7 +1045,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
     reservasList.innerHTML = '';
     if (historialList) historialList.innerHTML = '';
 
-    const res = await fetch(`https://api.canchalibre.ar/reservas/${clubEmail}`);
+    const res = await fetch(window.CanchaLibreApiUrl(`/reservas/${clubEmail}`));
     const reservas = await res.json();
 
     const ahora = new Date();
@@ -1155,7 +1157,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         const id = btn.getAttribute('data-id');
         const confirmar = confirm('¿Estás seguro de que querés cancelar esta reserva?');
         if (!confirmar) return;
-        await fetch(`https://api.canchalibre.ar/turnos/${id}/cancelar`, { method: 'PATCH' });
+        await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/cancelar`), { method: 'PATCH' });
         await cargarReservas();
       });
     });
@@ -1164,7 +1166,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         try {
-          const res = await fetch(`https://api.canchalibre.ar/generar-link-pago/${id}`, {
+          const res = await fetch(window.CanchaLibreApiUrl(`/generar-link-pago/${id}`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1174,7 +1176,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
             return;
           }
 
-          const resReserva = await fetch(`https://api.canchalibre.ar/reserva/${id}`);
+          const resReserva = await fetch(window.CanchaLibreApiUrl(`/reserva/${id}`));
           const reserva = await resReserva.json();
 
           let telefonoOriginal = reserva.usuarioId?.telefono || '';
@@ -1226,7 +1228,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         if (!confirmar) return;
 
         try {
-          const res = await fetch(`https://api.canchalibre.ar/turnos/${id}/marcar-pagado`, {
+          const res = await fetch(window.CanchaLibreApiUrl(`/turnos/${id}/marcar-pagado`), {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1259,7 +1261,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
     localidadSelect.disabled = true;
 
     try {
-      const res = await fetch('https://api.canchalibre.ar/ubicaciones');
+      const res = await fetch(window.CanchaLibreApiUrl('/ubicaciones'));
       const data = await res.json();
 
       provinciaSelect.innerHTML = '<option value="">Seleccionar provincia</option>';
@@ -1313,7 +1315,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         const body = { nombre, telefono, provincia, localidad };
 
         try {
-          const res = await fetch(`https://api.canchalibre.ar/club/${clubData._id}`, {
+          const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubData._id}`), {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -1348,7 +1350,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
     contenedor.innerHTML = '';
 
     try {
-      const res = await fetch(`https://api.canchalibre.ar/reservas/${clubData.email}`);
+      const res = await fetch(window.CanchaLibreApiUrl(`/reservas/${clubData.email}`));
       if (!res.ok) throw new Error('Error al obtener reservas');
       const reservas = await res.json();
 

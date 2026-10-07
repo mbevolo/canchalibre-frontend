@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modal = new bootstrap.Modal(document.getElementById('modalCancha'));
 
     async function cargarInfoClub() {
-        const res = await fetch(`https://api.canchalibre.ar/club/${clubEmail}`);
+        const res = await fetch(window.CanchaLibreApiUrl(`/club/${clubEmail}`));
         const club = await res.json();
         document.getElementById('infoClubContent').innerHTML = `
             <p><strong>Nombre:</strong> ${club.nombre}</p>
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function cargarCanchas() {
-        const res = await fetch(`https://api.canchalibre.ar/canchas/${clubEmail}`);
+        const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
         const canchas = await res.json();
         const list = document.getElementById('canchasList');
         list.innerHTML = '';
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.eliminarCancha = async (id) => {
         if (confirm('¿Estás seguro de eliminar esta cancha?')) {
-            await fetch(`https://api.canchalibre.ar/canchas/${id}`, { method: 'DELETE' });
+            await fetch(window.CanchaLibreApiUrl(`/canchas/${id}`), { method: 'DELETE' });
             cargarCanchas();
         }
     };
@@ -67,13 +67,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const body = { nombre, deporte, precio, clubEmail };
 
         if (id) {
-            await fetch(`https://api.canchalibre.ar/canchas/${id}`, {
+            await fetch(window.CanchaLibreApiUrl(`/canchas/${id}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
         } else {
-            await fetch('https://api.canchalibre.ar/canchas', {
+            await fetch(window.CanchaLibreApiUrl('/canchas'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)

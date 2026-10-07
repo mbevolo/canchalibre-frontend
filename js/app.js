@@ -584,7 +584,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         `;
 
         const selectPago = document.getElementById('metodo-pago');
-        if (selectPago && !club?.mercadoPagoAccessToken) {
+        if (selectPago && !club?.pagoOnlineDisponible) {
           const opcionOnline = selectPago.querySelector('option[value="online"]');
           if (opcionOnline) opcionOnline.remove();
         }

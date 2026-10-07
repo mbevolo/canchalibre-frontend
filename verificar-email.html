@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verificando cuenta...</title>
@@ -37,7 +38,7 @@
       // ✅ NADA DE fetch / AJAX
       // Navegamos directamente al backend, que ya hace el redirect al login
       window.location.href =
-        'https://api.canchalibre.ar/verificar-email'
+        window.CanchaLibreApiUrl('/verificar-email')
         + '?token=' + encodeURIComponent(token)
         + '&tipo='  + encodeURIComponent(tipo);
     })();

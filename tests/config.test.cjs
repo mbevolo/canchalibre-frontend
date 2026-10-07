@@ -25,3 +25,10 @@ test('booking pages load configuration before app code', () => {
   }
   assert.equal(fs.readFileSync('js/app.js', 'utf8').includes('https://api.canchalibre.ar'), false);
 });
+test('club and admin use the same configurable API origin', () => {
+  const window = load({ API_BASE_URL: 'http://localhost:3001/' });
+  assert.equal(window.CanchaLibreApiUrl('/api/club/me'), 'http://localhost:3001/api/club/me');
+  for (const file of ['js/club-advanced.js', 'js/club.js', 'js/login-club.js', 'js/superadmin.js']) {
+    assert.equal(fs.readFileSync(file, 'utf8').includes('https://api.canchalibre.ar'), false, file);
+  }
+});
