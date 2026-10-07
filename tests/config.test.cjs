@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 function load(window) {
-  const context = { window, document: { getElementById: () => null }, Headers };
+  const context = { window, document: { getElementById: () => null, querySelectorAll: () => [] }, URLSearchParams, Headers };
   vm.runInNewContext(fs.readFileSync('config.js', 'utf8'), context);
   vm.runInNewContext(fs.readFileSync('js/auth.js', 'utf8'), context);
   return window;

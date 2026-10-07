@@ -48,11 +48,12 @@ test('home restores JWT session and logout calls the server', async () => {
     await until(() => dom.window.CanchalibreAuth.getAccessToken() === null);
   } finally { dom.window.close(); }
 });
-test('guest home offers login instead of protected search', async () => {
+test('guest home keeps public search available', async () => {
   const dom = await page('index.html', async url => response(url.endsWith('/auth/refresh') ? 401 : 200, {}));
   try {
-    await until(() => !dom.window.document.getElementById('formulario-busqueda'));
-    assert.match(dom.window.document.body.textContent, /Debes iniciar sesión/);
+    await until(() => dom.window.document.getElementById('usuario-logueado').textContent === 'No has iniciado sesión');
+    assert.ok(dom.window.document.getElementById('formulario-busqueda'));
+    assert.doesNotMatch(dom.window.document.body.textContent, /Debes iniciar sesión para ver/);
   } finally { dom.window.close(); }
 });
 test('reservation sends JWT, blocks double click, and can retry after failure', async () => {
@@ -126,5 +127,23 @@ test('search blocks duplicate submits, recovers after failure and renders safe r
     submit(); await until(() => !button.disabled);
     assert.match(doc.getElementById('estado-busqueda').textContent, /Probá otra hora/);
     assert.equal(doc.getElementById('resultados').getAttribute('aria-busy'), 'false');
+  } finally { dom.window.close(); }
+});
+
+test('guest can inspect a slot but confirmation requires login without creating a hold', async () => {
+  const calls = [];
+  const selected = { canchaId: 'court-test', club: 'club@test.local', deporte: 'padel', fecha: '2030-01-10', hora: '10:00' };
+  const dom = await page('detalle.html', async url => {
+    calls.push(url);
+    return response(url.endsWith('/auth/refresh') ? 401 : 200, url.includes('/club/') ? {nombre: 'Test Club'} : {});
+  }, selected);
+  try {
+    await until(() => dom.window.document.getElementById('detalle').textContent.includes('Test Club'));
+    await tick();
+    dom.window.document.getElementById('confirmar-reserva').click();
+    await until(() => calls.filter(url => url.endsWith('/auth/refresh')).length === 2);
+    await tick();
+    assert.equal(calls.some(url => url.endsWith('/reservas/hold')), false);
+    assert.equal(JSON.parse(dom.window.localStorage.getItem('turnoSeleccionado')).canchaId, selected.canchaId);
   } finally { dom.window.close(); }
 });

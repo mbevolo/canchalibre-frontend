@@ -439,10 +439,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   // --- Login/Logout + protección de vistas ---
   const auth = window.CanchalibreAuth;
   let usuario = null;
-  if (auth && await auth.requireUserSession()) {
-    const respuestaUsuario = await auth.authFetch('/auth/me');
-    if (respuestaUsuario.ok) usuario = await respuestaUsuario.json();
-  }
+  try {
+    if (auth && await auth.requireUserSession()) {
+      const respuestaUsuario = await auth.authFetch('/auth/me');
+      if (respuestaUsuario.ok) usuario = await respuestaUsuario.json();
+    }
+  } catch (_) { /* La búsqueda pública sigue disponible sin sesión. */ }
   const email = usuario?.email;
   const spanUsuario = document.getElementById('usuario-logueado');
   const botonLogout = document.getElementById('logout');
@@ -460,27 +462,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   } else {
     if (spanUsuario) spanUsuario.textContent = 'No has iniciado sesión';
 
-    const formularioTmp = document.getElementById('formulario-busqueda');
-    if (formularioTmp) {
-      const contenedor = document.createElement('div');
-      const mensaje = document.createElement('p');
-      mensaje.textContent = 'Debes iniciar sesión para ver y reservar turnos.';
-      contenedor.appendChild(mensaje);
 
-      const botonLogin = document.createElement('button');
-      botonLogin.textContent = 'Iniciar sesión';
-      botonLogin.style.marginTop = '10px';
-      botonLogin.onclick = () => (window.location.href = 'login.html');
-      contenedor.appendChild(botonLogin);
-
-      formularioTmp.replaceWith(contenedor);
-    }
-
-    if (window.location.pathname.includes('detalle.html')) {
-      alert('Debes iniciar sesión para acceder a esta página.');
-      window.location.href = 'login.html';
-      return;
-    }
   }
 
   // --- Carga de provincias/localidades si corresponde ---
@@ -640,6 +622,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       });
 
     function agregarEventosDetalle() {
+      const pago = document.getElementById('metodo-pago');
+      if (pago && [...pago.options].some(opcion => opcion.value === turnoGuardado.metodoPago)) {
+        pago.value = turnoGuardado.metodoPago;
+      }
+      if (!email) {
+        const aviso = document.createElement('p');
+        aviso.textContent = 'Podés revisar el turno. Al confirmar, te pediremos iniciar sesión.';
+        document.getElementById('confirmar-reserva')?.before(aviso);
+      }
       const checkboxGrupal = document.getElementById('reserva-grupal');
       const divGrupoJugadores = document.getElementById('grupo-jugadores');
 
@@ -658,6 +649,12 @@ window.addEventListener('DOMContentLoaded', async () => {
           try {
 const selectPago = document.getElementById('metodo-pago');
 const metodoPagoSeleccionado = selectPago ? selectPago.value : 'efectivo';
+turnoGuardado.metodoPago = metodoPagoSeleccionado;
+localStorage.setItem('turnoSeleccionado', JSON.stringify(turnoGuardado));
+if (!await auth.requireUserSession()) {
+  window.location.href = 'login.html?volver=detalle';
+  return;
+}
 
 const respuesta = await auth.authFetch('/reservas/hold', {
   method: 'POST',
@@ -672,6 +669,10 @@ const respuesta = await auth.authFetch('/reservas/hold', {
 
 
 
+            if (respuesta.status === 401) {
+              window.location.href = 'login.html?volver=detalle';
+              return;
+            }
             const data = await respuesta.json();
 
             if (respuesta.ok) {

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 function load(fetch) {
-  const context = { window: { APP_BASE_URL: 'http://localhost:3001' }, document: { getElementById: () => null }, localStorage: { removeItem() {} }, Headers, fetch };
+  const context = { window: { APP_BASE_URL: 'http://localhost:3001' }, document: { getElementById: () => null, querySelectorAll: () => [] }, localStorage: { removeItem() {} }, URLSearchParams, Headers, fetch };
   vm.runInNewContext(fs.readFileSync('js/auth.js', 'utf8'), context);
   return context.window.CanchalibreAuth;
 }

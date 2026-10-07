@@ -20,13 +20,15 @@ fs.mkdirSync(artifacts, { recursive: true });
  try {
   browser=await playwright.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH || undefined,args:process.env.CHROMIUM_ARGS ? JSON.parse(process.env.CHROMIUM_ARGS) : [],headless:true});
   const context=await browser.newContext({viewport:{width:1366,height:900}});
-  const calls=[],errors=[]; let showMapSlots=false;
+  const calls=[],errors=[]; let showMapSlots=false, guest=false;
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());
    if(url.origin==='http://127.0.0.1:4001') {
     calls.push({url:url.pathname,headers:await route.request().allHeaders()});
     const headers={'Access-Control-Allow-Origin':base,'Access-Control-Allow-Credentials':'true','Access-Control-Allow-Headers':'Content-Type, Authorization','Content-Type':'application/json'};
     let body={};
+    if(url.pathname==='/auth/login'){guest=false;body={accessToken:'browser-token'};}
+    if(url.pathname==='/auth/refresh' && guest){await route.fulfill({status:401,headers,body:'{}'});return;}
     if(url.pathname==='/auth/refresh')body={accessToken:'browser-token'};
     if(url.pathname==='/auth/me')body={email:'browser@test.local',nombre:'Prueba'};
     if(decodeURIComponent(url.pathname)==='/club/club@test.local')body={nombre:'Club de prueba',pagoOnlineDisponible:false};
@@ -82,6 +84,26 @@ fs.mkdirSync(artifacts, { recursive: true });
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
   await page.screenshot({path:path.join(artifacts,'web-user-panel-mobile.png'),fullPage:true});
+  guest=true;
+  await page.goto(base+'/index.html');
+  await page.waitForFunction(()=>document.getElementById('usuario-logueado').textContent==='No has iniciado sesión');
+  await page.selectOption('#deporte','padel');await page.fill('#fecha','2030-01-10');await page.click('.btn-buscar-turnos');
+  await page.locator('#resultados .turno button').first().click();
+  await page.waitForURL(base+'/detalle.html');await page.locator('#detalle h3').waitFor();
+  const previousHolds=calls.filter(c=>c.url==='/reservas/hold').length;
+  await page.click('#confirmar-reserva');await page.waitForURL(base+'/login.html?volver=detalle');
+  assert.equal(calls.filter(c=>c.url==='/reservas/hold').length,previousHolds);
+  assert.match(await page.locator('a[href*="registro.html"]').getAttribute('href'),/volver=detalle/);
+  await page.fill('#email','browser@test.local');await page.fill('#password','Test123456');
+  await page.locator('#form-login button[type=submit]').click();
+  await page.waitForURL(base+'/detalle.html');await page.locator('#detalle h3').waitFor();
+  assert.equal(calls.filter(c=>c.url==='/reservas/hold').length,previousHolds);
+  assert.match(await page.locator('#detalle').textContent(),/10:00/);
+  await page.click('#confirmar-reserva');await page.waitForURL(base+'/index.html');
+  assert.equal(calls.filter(c=>c.url==='/reservas/hold').length,previousHolds+1);
+  await page.goto(base+'/login.html?volver=https://example.com');
+  await page.fill('#email','browser@test.local');await page.fill('#password','Test123456');
+  await page.locator('#form-login button[type=submit]').click();await page.waitForURL(base+'/index.html');
   assert.deepEqual(errors,[]);
   console.log('Chromium: index, detalle, reserva con JWT, navegación y logout OK; sin errores JavaScript. API y recursos externos simulados.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}

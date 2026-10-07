@@ -117,6 +117,12 @@ window.CanchalibreAuth = {
   requireUserSession
 };
 
+// El destino de regreso es fijo para evitar redirecciones externas.
+const volverAlTurno = new URLSearchParams(window.location?.search).get('volver') === 'detalle';
+for (const enlace of document.querySelectorAll('a[href="registro.html"], a[href="login.html"]')) {
+  if (volverAlTurno) enlace.href += '?volver=detalle';
+}
+
 // ============================
 // Registro
 // ============================
@@ -158,7 +164,7 @@ if (formRegistro) {
       }
 
       alert('Registro exitoso. Revisá tu email para verificar la cuenta.');
-      window.location.href = 'login.html';
+      window.location.href = volverAlTurno ? 'login.html?volver=detalle' : 'login.html';
     } catch (err) {
       console.error("❌ Error de red en registro:");
       alert('Error de red. Intentá nuevamente.');
@@ -190,7 +196,7 @@ if (formLogin) {
       const { ok, status, data } = await loginUser(email, password);
 
       if (ok) {
-        window.location.href = 'index.html';
+        window.location.href = volverAlTurno ? 'detalle.html' : 'index.html';
         return;
       }
 
