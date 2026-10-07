@@ -14,6 +14,7 @@
     <link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet">
     <link rel="stylesheet" href="css/panels.css">
 <link rel="stylesheet" href="css/brand.css">
+<link rel="stylesheet" href="css/club-management.css">
 </head>
 
   <body class="bg-light panel-ui cl-theme cl-panel">
@@ -91,23 +92,16 @@
 
         <!-- CANCHAS -->
         <div class="tab-pane fade" id="canchasTab" role="tabpanel" aria-labelledby="canchas-tab">
-          <div id="canchas-list" class="row g-3 mb-3"></div>
-          <button id="agregar-cancha" class="btn btn-success">Agregar cancha</button>
+          <div class="management-heading"><div><h2>Mis canchas <span id="canchas-count" class="management-count"></span></h2><p>Configurá los horarios, precios y días de cada cancha.</p></div><button id="agregar-cancha" class="btn btn-success">+ Agregar cancha</button></div>
+<label for="buscar-cancha" class="visually-hidden">Buscar cancha</label><input id="buscar-cancha" class="form-control court-search" type="search" placeholder="Buscar por nombre o deporte">
+<div id="canchas-list" class="row g-3 mb-3" aria-live="polite"></div>
         </div>
 
         <!-- AGENDA -->
         <div class="tab-pane fade" id="agendaTab" role="tabpanel" aria-labelledby="agenda-tab">
-          <div class="container-fluid px-3">
-
-            <!-- SELECTOR DE CANCHA AFUERA DEL CONTENEDOR DE LA AGENDA -->
-            <div id="selector-cancha-wrapper" class="mb-3">
-              <label for="select-cancha-agenda" class="form-label">Seleccioná la cancha:</label>
-              <select id="select-cancha-agenda" class="form-select" style="max-width:280px;"></select>
-            </div>
-
-            <!-- ACA VA LA AGENDA -->
-            <div id="agendas-container"></div>
-          </div>
+          <div class="management-heading"><div><h2>Agenda de turnos</h2><p>Elegí una cancha y tocá un turno para reservarlo o gestionar su pago.</p></div><button id="agenda-refresh" class="btn btn-outline-primary">Actualizar</button></div>
+<div class="agenda-controls"><div><label for="select-cancha-agenda" class="form-label">Cancha</label><select id="select-cancha-agenda" class="form-select"></select></div><div><label for="agenda-fecha" class="form-label">Ir a una fecha</label><input id="agenda-fecha" type="date" class="form-control"></div></div>
+<div id="agenda-summary" class="agenda-summary" aria-live="polite"></div><p id="agenda-status" role="status"></p><div id="agendas-container" class="agenda-calendar"></div>
         </div>
 
         <!-- RESERVAS -->
@@ -223,25 +217,25 @@
 
     <!-- Modales -->
     <div class="modal fade" id="modalCancha" tabindex="-1" aria-labelledby="modalCanchaLabel" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="modalCanchaLabel">Agregar / Editar cancha</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
-            <label class="form-label" for="nombre-cancha">Nombre de la cancha</label>
-            <input id="nombre-cancha" type="text" class="form-control mb-2" placeholder="Nombre de la cancha">
+            <div class="mb-2"><label class="form-label" for="nombre-cancha">Nombre de la cancha</label>
+            <input id="nombre-cancha" type="text" class="form-control mb-2" placeholder="Nombre de la cancha"></div>
 
-            <label class="form-label" for="tipo-cancha">Deporte</label>
+            <div class="mb-2"><label class="form-label" for="tipo-cancha">Deporte</label>
             <select id="tipo-cancha" class="form-select mb-2">
               <option value="futbol">Fútbol</option>
               <option value="padel">Pádel</option>
               <option value="tenis">Tenis</option>
-            </select>
+            </select></div>
 
-            <label class="form-label" for="precio-cancha">Precio por hora</label>
-            <input id="precio-cancha" type="number" class="form-control mb-2" placeholder="Precio por hora">
+            <div class="mb-2"><label class="form-label" for="precio-cancha">Precio por turno</label>
+            <input id="precio-cancha" type="number" class="form-control mb-2" placeholder="Precio por turno"></div>
 
             <!-- Tarifa nocturna -->
             <div class="mb-2">
@@ -270,13 +264,13 @@
               </select>
             </div>
 
-            <label for="hora-desde">Hora desde:</label>
-            <select id="hora-desde" class="form-select mb-2"></select>
+            <div class="mb-2"><label for="hora-desde">Hora desde:</label>
+            <select id="hora-desde" class="form-select mb-2"></select></div>
 
-            <label for="hora-hasta">Hora hasta:</label>
-            <select id="hora-hasta" class="form-select mb-2"></select>
+            <div class="mb-2"><label for="hora-hasta">Hora hasta:</label>
+            <select id="hora-hasta" class="form-select mb-2"></select></div>
 
-            <label class="mb-1">Días disponibles:</label>
+            <fieldset class="court-day-options"><legend class="fs-6">Días disponibles</legend>
 
             <div class="form-check">
               <input class="form-check-input" type="checkbox" value="lunes" id="dia-lunes" checked>
@@ -306,6 +300,7 @@
               <input class="form-check-input" type="checkbox" value="domingo" id="dia-domingo" checked>
               <label class="form-check-label" for="dia-domingo">Domingo</label>
             </div>
+</fieldset>
           </div>
 
           <div class="modal-footer">
@@ -316,7 +311,7 @@
     </div>
 
     <div class="modal fade" id="modalTurno" tabindex="-1" aria-labelledby="modalTurnoLabel" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="modalTurnoLabel">Detalle del Turno</h5>

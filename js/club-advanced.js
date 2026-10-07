@@ -543,13 +543,17 @@ btnDescargarQR.addEventListener('click', () => {
       select.innerHTML = '';
       for (let h = 0; h < 24; h++) {
         const hora = `${h.toString().padStart(2, '0')}:00`;
-        select.innerHTML += `<option value="${hora}">${hora}</option>`;
+        select.innerHTML += `<option value="${hora}">${hora}</option><option value="${hora.slice(0, 2)}:30">${hora.slice(0, 2)}:30</option>`;
       }
     });
+    hHasta.insertAdjacentHTML('beforeend', '<option value="24:00">00:00 (medianoche)</option>');
   }
 
   document.getElementById('agregar-cancha')?.addEventListener('click', () => {
     editandoCanchaId = null;
+    document.getElementById('modalCanchaLabel').textContent = 'Agregar cancha';
+    document.querySelectorAll('#modalCancha .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('#modalCancha .invalid-feedback').forEach(el => el.remove());
     llenarSelectHoras();
 
     if (!nombreInput || !tipoInput || !precioInput || !horaDesdeInput || !horaHastaInput) {
@@ -575,88 +579,75 @@ btnDescargarQR.addEventListener('click', () => {
     modal.show();
   });
 
-  async function cargarCanchas() {
-    if (!canchasList) return;
-
+  let courtsCache = [];
+  const money = value => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(value || 0));
+  const normalizeDay = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function mostrarCanchas() {
+    const query = document.getElementById('buscar-cancha').value.toLowerCase().trim();
+    const courts = courtsCache.filter(c => `${c.nombre} ${c.deporte}`.toLowerCase().includes(query));
+    document.getElementById('canchas-count').textContent = courtsCache.length;
     canchasList.innerHTML = '';
-    const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
-    if (!res.ok) throw new Error('Error al cargar canchas');
-    const canchas = await res.json();
-
-    canchas.forEach(cancha => {
-      const div = document.createElement('div');
-      div.classList.add('col-md-4');
-      div.innerHTML = `
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">${escapeClubHtml(cancha.nombre)}</h5>
-            <p><strong>Deporte:</strong> ${escapeClubHtml(cancha.deporte)}</p>
-            <p><strong>Precio:</strong> $${cancha.precio || '0'}/hora</p>
-            <p><strong>Horario:</strong> ${cancha.horaDesde || '08:00'} a ${cancha.horaHasta || '22:00'}</p>
-            <p><strong>Duración:</strong> ${(cancha.duracionTurno || 60)} min</p>
-            <p><strong>Nocturno:</strong> ${
-              (cancha.nocturnoDesde !== null && cancha.nocturnoDesde !== undefined)
-                ? (String(cancha.nocturnoDesde).padStart(2, '0') + ':00')
-                : '—'
-            } — $${(cancha.precioNocturno !== null && cancha.precioNocturno !== undefined) ? cancha.precioNocturno : '—'}</p>
-            <p><strong>Días disponibles:</strong> ${escapeClubHtml(cancha.diasDisponibles ? cancha.diasDisponibles.join(', ') : 'No especificado')}</p>
-            <button class="btn btn-primary btn-sm me-2" data-action="edit">Editar</button>
-            <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
-          </div>
-        </div>
-      `;
-      div.querySelector('[data-action="edit"]').addEventListener('click', () => window.editarCancha(cancha._id));
-      div.querySelector('[data-action="delete"]').addEventListener('click', () => window.eliminarCancha(cancha._id));
+    if (!courts.length) canchasList.innerHTML = `<div class="col-12"><div class="management-empty">${courtsCache.length ? 'No hay canchas que coincidan con tu búsqueda.' : 'Todavía no agregaste canchas. Creá la primera para comenzar a recibir reservas.'}</div></div>`;
+    courts.forEach(cancha => {
+      const div = document.createElement('div'); div.className = 'col-md-6 col-xl-4';
+      const days = new Set((cancha.diasDisponibles || []).map(normalizeDay));
+      div.innerHTML = `<article class="court-card"><span class="court-sport">${escapeClubHtml(cancha.deporte)}</span><h3>${escapeClubHtml(cancha.nombre)}</h3><div class="court-price">${money(cancha.precio)} <small>/ turno</small></div><div class="court-meta"><span>${Number(cancha.duracionTurno || 60)} min por turno</span><span>${escapeClubHtml(cancha.horaDesde || '08:00')} a ${escapeClubHtml(cancha.horaHasta || '22:00')}</span></div><div class="court-days" aria-label="Días disponibles">${diasCheckboxes.map((d,i) => `<span class="${days.has(d) ? 'active' : ''}" title="${d}">${['Lu','Ma','Mi','Ju','Vi','Sá','Do'][i]}</span>`).join('')}</div><p class="court-night">${cancha.nocturnoDesde != null && cancha.precioNocturno != null ? `Tarifa nocturna desde ${String(cancha.nocturnoDesde).padStart(2,'0')}:00 · ${money(cancha.precioNocturno)}` : 'Misma tarifa durante todo el día'}</p><div class="court-actions"><button class="btn btn-primary btn-sm" data-action="agenda">Ver agenda</button><button class="btn btn-outline-primary btn-sm" data-action="edit">Editar</button><button class="btn btn-outline-danger btn-sm" data-action="delete" aria-label="Eliminar ${escapeClubHtml(cancha.nombre)}">Eliminar</button></div></article>`;
+      div.querySelector('[data-action="edit"]').onclick = () => window.editarCancha(cancha._id);
+      div.querySelector('[data-action="delete"]').onclick = () => window.eliminarCancha(cancha._id);
+      div.querySelector('[data-action="agenda"]').onclick = () => { agendaCourt = cancha._id; bootstrap.Tab.getOrCreateInstance(document.getElementById('agenda-tab')).show(); };
       canchasList.appendChild(div);
     });
   }
-
-  // ========== AGENDA ==========
-  async function cargarEventosSemana(canchaId, fechaInicioSemana) {
-    const fechaParam = (fechaInicioSemana || '').split('T')[0];
-    const res = await fetch(window.CanchaLibreApiUrl(`/turnos-generados?fecha=${fechaParam}`));
-    const turnos = await res.json();
-    const canchaTurnos = turnos.filter(t => t.canchaId?.toString() === canchaId.toString());
-
-    const eventos = canchaTurnos.map(t => {
-      const [anio, mes, dia] = t.fecha.split('-');
-      const fechaHoraTurno = new Date(
-        Number(anio), Number(mes) - 1, Number(dia),
-        Number(t.hora.split(':')[0]), Number(t.hora.split(':')[1])
-      );
-      const fechaDelTurno = new Date(Number(anio), Number(mes) - 1, Number(dia));
-      fechaDelTurno.setHours(0, 0, 0, 0);
-
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      let color = 'green';
-      if (fechaDelTurno < hoy || (fechaDelTurno.getTime() === hoy.getTime() && fechaHoraTurno < new Date())) {
-        color = t.usuarioReservado ? '#7a7a7a' : '#bcbcbc';
-      } else if (t.usuarioReservado) {
-        color = 'red';
-      }
-
-      return {
-        title: t.usuarioReservado ? `Reservado: ${t.usuarioReservado}` : `Libre`,
-        start: `${t.fecha}T${t.hora}`,
-        color: color,
-        id: t.realId,
-        extendedProps: t
-      };
-    });
-
-    const calendarEl = document.getElementById('calendar-unico');
-    if (calendarEl && calendarEl._calendar) {
-      calendarEl._calendar.removeAllEvents();
-      calendarEl._calendar.addEventSource(eventos);
+  document.getElementById('buscar-cancha').addEventListener('input', mostrarCanchas);
+  async function cargarCanchas() {
+    canchasList.innerHTML = '<p role="status">Cargando canchas…</p>';
+    try {
+      const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
+      if (!res.ok) throw new Error('No se pudieron cargar las canchas.');
+      courtsCache = await res.json(); mostrarCanchas();
+    } catch (error) {
+      canchasList.innerHTML = '<div class="management-empty">No se pudieron cargar las canchas. <button class="btn btn-outline-primary btn-sm">Reintentar</button></div>';
+      canchasList.querySelector('button').onclick = cargarCanchas;
     }
   }
 
+  // ========== AGENDA ==========
+  let agendaCourt = null, agendaDate = null, agendaView = null, activeCalendar = null, agendaRequest = 0, agendaBuild = 0;
+  const localDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  async function cargarEventosSemana(canchaId, fechaInicioSemana) {
+    const request = ++agendaRequest, calendar = activeCalendar;
+    const status = document.getElementById('agenda-status');
+    status.textContent = 'Cargando turnos…';
+    calendar?.removeAllEvents();
+    document.getElementById('agenda-summary').textContent = '';
+    try {
+      const res = await fetch(window.CanchaLibreApiUrl(`/turnos-generados?fecha=${fechaInicioSemana.split('T')[0]}`));
+      if (!res.ok) throw new Error('No se pudieron cargar los turnos. Usá Actualizar para reintentar.');
+      const turnos = await res.json();
+      if (request !== agendaRequest || calendar !== activeCalendar) return;
+      const slots = turnos.filter(t => String(t.canchaId) === String(canchaId));
+      const events = slots.map(t => {
+        const start = new Date(`${t.fecha}T${t.hora}`), past = start < new Date();
+        const end = new Date(start.getTime() + Number(t.duracionTurno || 60)*60000);
+        const color = past ? '#64748b' : !t.usuarioReservado ? '#16836a' : t.pagado ? '#2563eb' : '#b66b13';
+        return { title: t.usuarioReservado ? `${t.pagado ? 'Pagado' : 'Pendiente'} · ${t.usuarioReservado}` : 'Libre', start, end, color, id: t.realId || `${t.canchaId}-${t.fecha}-${t.hora}`, extendedProps: {...t, pasado: past} };
+      });
+      calendar.addEventSource(events);
+      const visible = events.filter(e => e.start >= calendar.view.activeStart && e.start < calendar.view.activeEnd);
+      document.getElementById('agenda-summary').innerHTML = [['Libres','#16836a',e=>!e.extendedProps.usuarioReservado&&!e.extendedProps.pasado],['Pendientes','#b66b13',e=>e.extendedProps.usuarioReservado&&!e.extendedProps.pagado],['Pagados','#2563eb',e=>e.extendedProps.usuarioReservado&&e.extendedProps.pagado]].map(([label,color,filter])=>`<span><i style="background:${color}"></i><strong>${visible.filter(filter).length}</strong> ${label}</span>`).join('');
+      status.textContent = visible.length ? 'Los turnos pasados se muestran en gris.' : 'No hay turnos para este período. Revisá los días y horarios de la cancha.';
+    } catch(error) { if (request === agendaRequest) status.textContent = error.message; }
+  }
+  document.getElementById('agenda-refresh').onclick = () => cargarAgendas();
+  document.getElementById('agenda-fecha').onchange = function() { if(this.value) activeCalendar?.gotoDate(this.value); };
+
   async function cargarAgendas() {
+    const build = ++agendaBuild;
     const agendasContainer = document.getElementById('agendas-container');
     if (!agendasContainer) return;
 
+    if (activeCalendar) { agendaDate = activeCalendar.getDate(); agendaView = activeCalendar.view.type; activeCalendar.destroy(); activeCalendar = null; }
+    ++agendaRequest;
     agendasContainer.innerHTML = `<div id="calendar-unico"></div>`;
 
     const selectCancha = document.getElementById('select-cancha-agenda');
@@ -665,8 +656,11 @@ btnDescargarQR.addEventListener('click', () => {
     // Evitar duplicados
     selectCancha.innerHTML = '';
 
-    const resCanchas = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
+    let resCanchas;
+    try { resCanchas = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`)); } catch { document.getElementById('agenda-status').textContent = 'No se pudo conectar. Usá Actualizar para reintentar.'; return; }
+    if (!resCanchas.ok) { document.getElementById('agenda-status').textContent = 'No se pudieron cargar las canchas. Usá Actualizar para reintentar.'; return; }
     const canchas = await resCanchas.json();
+    if (build !== agendaBuild) return;
 
     if (!canchas || canchas.length === 0) {
       agendasContainer.innerHTML = '<div class="alert alert-warning">No hay canchas creadas.</div>';
@@ -676,12 +670,13 @@ btnDescargarQR.addEventListener('click', () => {
     canchas.forEach((cancha, i) => {
       const opt = document.createElement('option');
       opt.value = cancha._id;
-      opt.textContent = `${escapeClubHtml(cancha.nombre)} (${escapeClubHtml(cancha.deporte)})`;
+      opt.textContent = `${cancha.nombre} (${cancha.deporte})`;
       if (i === 0) opt.selected = true;
       selectCancha.appendChild(opt);
     });
 
     async function renderCalendario(canchaId) {
+      if (activeCalendar) { agendaDate = activeCalendar.getDate(); agendaView = activeCalendar.view.type; }
       const calendarEl = document.getElementById('calendar-unico');
       const cancha = canchas.find(c => c._id === canchaId);
       if (!calendarEl || !cancha) return;
@@ -697,7 +692,12 @@ btnDescargarQR.addEventListener('click', () => {
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
         themeSystem: 'bootstrap5',
-        initialView: 'timeGridWeek',
+        initialView: agendaView || (window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek'),
+        initialDate: agendaDate || new Date(),
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,listWeek' },
+        buttonText: { today: 'Hoy', day: 'Día', week: 'Semana', list: 'Lista' },
+        nowIndicator: true,
+        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
         locale: 'es',
         firstDay: 1,
         height: 'auto',
@@ -705,12 +705,13 @@ btnDescargarQR.addEventListener('click', () => {
         timeZone: 'local',
         allDaySlot: false,
         slotMinTime: cancha.horaDesde || '08:00',
-        slotMaxTime: cancha.horaHasta || '22:00',
-        slotDuration: (Number(cancha.duracionTurno) === 90 ? '01:30:00' : '01:00:00'),
+        slotMaxTime: cancha.horaHasta === '00:00' ? '24:00' : cancha.horaHasta || '22:00',
+        slotDuration: '00:30:00',
         events: [],
         eventClick: async function (info) {
           const turno = info.event.extendedProps;
           turnoSeleccionado = turno;
+          document.getElementById('modalTurnoLabel')?.replaceChildren(document.createTextNode(cancha.nombre));
 
           const [anio, mes, dia] = turno.fecha.split('-');
           const fechaFormateada = `${dia}/${mes}/${anio}`;
@@ -725,7 +726,7 @@ btnDescargarQR.addEventListener('click', () => {
             }
 
             turnoDetalleBody.innerHTML = `
-              <p><strong>Usuario:</strong> ${escapeClubHtml(turno.usuarioReservado)}</p>
+              <p><strong>Importe:</strong> ${money(turno.precio)} · ${Number(turno.duracionTurno || 60)} min</p><p><strong>Usuario:</strong> ${escapeClubHtml(turno.usuarioReservado)}</p>
               <p><strong>Fecha:</strong> ${fechaFormateada}</p>
               <p><strong>Hora:</strong> ${escapeClubHtml(turno.hora)} hs</p>
               <p><strong>Estado:</strong> ${turno.pagado ? 'Pagado' : 'Pendiente de pago'}</p>
@@ -738,14 +739,14 @@ btnDescargarQR.addEventListener('click', () => {
             turnoDetalleBody.innerHTML = `
               <p><strong>Fecha:</strong> ${fechaFormateada}</p>
               <p><strong>Hora:</strong> ${escapeClubHtml(turno.hora)} hs</p>
-              <p>Este turno está libre.</p>
-              <input type="text" id="nombreCliente" placeholder="Nombre del cliente" class="form-control mb-2">
-              <input type="text" id="telefonoCliente" placeholder="Teléfono del cliente" class="form-control mb-2">
-              <input type="email" id="emailCliente" placeholder="Email del cliente" class="form-control mb-2">
+              <p><strong>Importe:</strong> ${money(turno.precio)} · ${Number(turno.duracionTurno || 60)} min</p><p>${turno.pasado ? 'Este turno ya pasó y no puede reservarse.' : 'Completá los datos del cliente para reservar.'}</p>
+              <label class="form-label" for="nombreCliente">Nombre del cliente</label><input type="text" id="nombreCliente" placeholder="Nombre del cliente" class="form-control mb-2">
+              <label class="form-label" for="telefonoCliente">Teléfono</label><input type="text" id="telefonoCliente" placeholder="Teléfono del cliente" class="form-control mb-2">
+              <label class="form-label" for="emailCliente">Email</label><input type="email" id="emailCliente" placeholder="Email del cliente" class="form-control mb-2">
             `;
 
             btnCancelarTurno.style.display = 'none';
-            btnReservarTurno.style.display = 'block';
+            btnReservarTurno.style.display = turno.pasado ? 'none' : 'block';
           }
 
           modalTurno.show();
@@ -798,6 +799,7 @@ btnDescargarQR.addEventListener('click', () => {
                   } else {
                     await cargarReservas();
                     modalTurno.hide();
+                    await cargarAgendas();
                   }
                 } catch (err) {
                   alert('Error al marcar como pagada.');
@@ -807,21 +809,27 @@ btnDescargarQR.addEventListener('click', () => {
           }, 0);
         },
         datesSet: async function (info) {
+          agendaDate = info.view.calendar.getDate(); agendaView = info.view.type;
+          document.getElementById('agenda-fecha').value = localDate(agendaDate);
           await cargarEventosSemana(cancha._id.toString(), info.startStr);
         }
       });
 
-      calendar.render();
+      activeCalendar = calendar;
       calendarEl._calendar = calendar;
+      calendar.render();
 
       calendar.updateSize();
     }
 
     selectCancha.onchange = async function () {
+      agendaCourt = this.value;
       await renderCalendario(this.value);
     };
 
-    await renderCalendario(canchas[0]._id);
+    agendaCourt = canchas.some(c => c._id === agendaCourt) ? agendaCourt : canchas[0]._id;
+    selectCancha.value = agendaCourt;
+    await renderCalendario(agendaCourt);
   }
 
   // Mostrar agendas al entrar en la pestaña
@@ -848,7 +856,7 @@ btnDescargarQR.addEventListener('click', () => {
     const dias = diasCheckboxes.filter(d => document.getElementById(`dia-${d}`)?.checked);
 
     // limpiar errores previos
-    [nombreInput, tipoInput, precioInput, horaDesdeInput, horaHastaInput].forEach(i => {
+    [nombreInput, tipoInput, precioInput, horaDesdeInput, horaHastaInput, precioNocturnoInput].forEach(i => {
       if (!i) return;
       i.classList.remove('is-invalid');
       const msg = i.parentElement?.querySelector('.invalid-feedback');
@@ -885,6 +893,9 @@ btnDescargarQR.addEventListener('click', () => {
       marcarError(horaHastaInput, '"Hasta" debe ser mayor que "Desde"');
     }
 
+    if (!dias.length) marcarError(nombreInput, 'Seleccioná al menos un día disponible.');
+    if (Boolean(nocturnoDesdeInput.value) !== Boolean(precioNocturnoInput.value) || (precioNocturnoInput.value && Number(precioNocturnoInput.value) <= 0)) marcarError(precioNocturnoInput, 'Completá el horario y un precio nocturno mayor a cero.');
+
     if (errores.length > 0) {
       errores[0].focus();
       alert('⚠️ Por favor corregí los campos marcados en rojo antes de guardar.');
@@ -904,28 +915,24 @@ btnDescargarQR.addEventListener('click', () => {
       precioNocturno: (precioNocturnoInput && precioNocturnoInput.value !== '') ? Number(precioNocturnoInput.value) : null
     };
 
-    if (editandoCanchaId) {
-      const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${editandoCanchaId}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(canchaData)
-      });
-      if (!res.ok) throw new Error('Error al actualizar cancha');
-    } else {
-      const res = await fetch(window.CanchaLibreApiUrl('/canchas'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(canchaData)
-      });
-      if (!res.ok) { const data = await res.json(); alert(data.error || 'Error al crear cancha'); return; }
-    }
+    const save = document.getElementById('guardar-cancha');
+    if (save.disabled) return;
+    save.disabled = true; save.textContent = 'Guardando…';
+    try {
+      const res = await fetch(window.CanchaLibreApiUrl(editandoCanchaId ? `/canchas/${editandoCanchaId}` : '/canchas'), { method: editandoCanchaId ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(canchaData) });
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'No se pudo guardar la cancha'); }
+      modal.hide(); await cargarCanchas();
+    } catch(error) { alert(error.message); }
+    finally { save.disabled = false; save.textContent = 'Guardar cancha'; }
 
-    modal.hide();
-    await cargarCanchas();
   });
 
   // Editar cancha
   window.editarCancha = async function (id) {
+    try {
+    document.getElementById('modalCanchaLabel').textContent = 'Editar cancha';
+    document.querySelectorAll('#modalCancha .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('#modalCancha .invalid-feedback').forEach(el => el.remove());
     const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${clubEmail}`));
     if (!res.ok) throw new Error('Error al cargar canchas');
     const canchas = await res.json();
@@ -933,6 +940,7 @@ btnDescargarQR.addEventListener('click', () => {
     const cancha = canchas.find(c => c._id === id);
     if (!cancha) return alert('Cancha no encontrada');
 
+    llenarSelectHoras();
     window._canchaAEditar = cancha;
 
     document.getElementById('modalCancha')?.addEventListener('shown.bs.modal', () => {
@@ -988,10 +996,12 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
     }, { once: true });
 
     modal.show();
+    } catch(error) { alert(error.message || 'No se pudo abrir la cancha.'); }
   };
 
   // Eliminar cancha
   window.eliminarCancha = async function (id) {
+    if (!confirm('¿Eliminar esta cancha? Sus turnos dejarán de estar disponibles.')) return;
     try {
       const res = await fetch(window.CanchaLibreApiUrl(`/canchas/${id}`), { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar cancha');
