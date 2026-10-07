@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('email').value = usuario.email || '';
   }
 
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let guardando = false;
+
   const camposUsuario = ['nombre', 'apellido', 'telefono'];
   const btnEditar = document.getElementById('btn-editar');
   const btnGuardar = document.getElementById('btn-guardar');
@@ -61,6 +64,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('form-usuario')?.addEventListener('submit', async e => {
     e.preventDefault();
+    if (guardando) return;
+    guardando = true;
+    if (btnGuardar) btnGuardar.disabled = true;
 
     const datos = {
       nombre: document.getElementById('nombre').value.trim(),
@@ -85,8 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       modoLectura();
       await cargarDatosUsuario();
     } catch (error) {
-      console.error('Error al actualizar usuario:', error);
-      alert('Error al actualizar los datos.');
+      alert('No se pudieron guardar los datos. Intentá nuevamente.');
+    } finally {
+      guardando = false;
+      if (btnGuardar) btnGuardar.disabled = false;
     }
   });
 
@@ -94,6 +102,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const contenedor = document.getElementById('reservas-container');
     if (!contenedor) return;
 
+    contenedor.setAttribute('aria-busy', 'true');
+    contenedor.textContent = 'Cargando tus reservas…';
     try {
       const res = await auth.authFetch('/api/me/reservas');
       const reservas = await res.json();
@@ -110,7 +120,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           ? fecha.split('-').map(Number)
           : [fecha.split('/')[2], fecha.split('/')[1], fecha.split('/')[0]].map(Number);
         const [h, m] = hora.split(':').map(Number);
-        return new Date(partes[0], partes[1] - 1, partes[2], h, m);
+        // Court schedules are in Argentina, independently of browser timezone.
+        return new Date(`${partes[0]}-${String(partes[1]).padStart(2, '0')}-${String(partes[2]).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00-03:00`);
       };
 
       const futuras = reservas
@@ -127,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
         .sort((a, b) => toDate(b.fecha, b.hora) - toDate(a.fecha, a.hora));
 
-      const cardReserva = r => {
+      const cardReserva = (r, pasada = false) => {
         const pendiente = r.tipo === 'PENDING';
         const fecha = r.fecha.includes('-')
           ? r.fecha.split('-').reverse().join('/')
@@ -141,32 +152,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let botones = '';
 
-        if (pendiente) {
+        if (pasada) {
+          botones = '';
+        } else if (pendiente) {
           botones =
-            '<button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="' + r._id + '">🔁 Reenviar correo</button>' +
-            ' <button class="btn btn-sm btn-outline-danger btn-cancelar-pendiente" data-id="' + r._id + '">Cancelar</button>';
+            '<button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="' + escapeHtml(r._id) + '">🔁 Reenviar correo</button>' +
+            ' <button class="btn btn-sm btn-outline-danger btn-cancelar-pendiente" data-id="' + escapeHtml(r._id) + '">Cancelar</button>';
         } else {
           botones =
-            '<button class="btn btn-sm btn-danger btn-cancelar" data-id="' + r._id + '">Cancelar</button>' +
+            '<button class="btn btn-sm btn-danger btn-cancelar" data-id="' + escapeHtml(r._id) + '">Cancelar</button>' +
             (!r.pagado
-              ? ' <button class="btn btn-sm btn-success btn-pagar" data-id="' + r._id + '">Pagar online</button>'
+              ? ' <button class="btn btn-sm btn-success btn-pagar" data-id="' + escapeHtml(r._id) + '">Pagar online</button>'
               : '');
         }
 
-        return '<div class="card mb-2 shadow-sm"><div class="card-body d-flex justify-content-between align-items-center">' +
-          '<div><div class="fw-bold">' + (r.nombreClub || 'Club') + '</div>' +
-          '<div class="text-muted">Cancha: ' + (r.nombreCancha || '—') + '</div>' +
-          '<div>📅 ' + fecha + ' — 🕒 ' + r.hora + '</div>' +
+        return '<div class="card mb-2 shadow-sm"><div class="card-body d-flex flex-wrap gap-3 justify-content-between align-items-center">' +
+          '<div><div class="fw-bold">' + escapeHtml(r.nombreClub || 'Club') + '</div>' +
+          '<div class="text-muted">Cancha: ' + escapeHtml(r.nombreCancha || '—') + '</div>' +
+          '<div>📅 ' + escapeHtml(fecha) + ' — 🕒 ' + escapeHtml(r.hora) + '</div>' +
           '<div class="mt-1">' + estado + '</div></div>' +
-          '<div>' + botones + '</div></div></div>';
+          '<div class="d-flex flex-wrap gap-2">' + botones + '</div></div></div>';
       };
 
       const htmlFuturas = futuras.length
-        ? futuras.map(cardReserva).join('')
+        ? futuras.map(r => cardReserva(r)).join('')
         : '<div class="alert alert-info">No tenés reservas futuras.</div>';
 
       const htmlPasadas = pasadas.length
-        ? pasadas.map(cardReserva).join('')
+        ? pasadas.map(r => cardReserva(r, true)).join('')
         : '<div class="alert alert-secondary">No tenés reservas pasadas.</div>';
 
       contenedor.innerHTML =
@@ -182,57 +195,61 @@ document.addEventListener('DOMContentLoaded', async () => {
           visible ? 'Ver reservas pasadas' : 'Ocultar reservas pasadas';
       });
     } catch (err) {
-      console.error('❌ Error al cargar reservas:', err);
-      contenedor.innerHTML = '<div class="alert alert-danger">Error al cargar tus reservas.</div>';
+      contenedor.innerHTML = '<div class="alert alert-danger">No se pudieron cargar tus reservas. <button class="btn btn-sm btn-outline-danger" id="reintentar-reservas">Reintentar</button></div>';
+      document.getElementById('reintentar-reservas').addEventListener('click', cargarReservas);
+    } finally {
+      contenedor.setAttribute('aria-busy', 'false');
     }
   }
 
   document.addEventListener('click', async e => {
     const target = e.target.closest('button');
-    if (!target) return;
+    if (!target || target.disabled) return;
     const id = target.dataset.id;
     if (!id) return;
-
-    if (target.classList.contains('btn-reenviar')) {
-      target.disabled = true;
-      try {
-        const res = await auth.authFetch('/api/me/reservas/' + id + '/resend-confirmation', { method: 'POST' });
-        const data = await res.json().catch(() => ({}));
-        alert(data.mensaje || data.error || 'Correo reenviado.');
-      } finally {
-        target.disabled = false;
-      }
-    }
-
-    if (target.classList.contains('btn-cancelar-pendiente')) {
-      if (!confirm('¿Seguro querés cancelar esta reserva pendiente?')) return;
-      const res = await auth.authFetch('/api/me/reservas/' + id + '/cancel', { method: 'PATCH' });
+    const resend = target.classList.contains('btn-reenviar');
+    const pending = target.classList.contains('btn-cancelar-pendiente');
+    const cancel = target.classList.contains('btn-cancelar');
+    const pay = target.classList.contains('btn-pagar');
+    if (!resend && !pending && !cancel && !pay) return;
+    if ((pending || cancel) && !confirm('¿Seguro querés cancelar esta reserva?')) return;
+    const card = target.closest('.card');
+    const buttons = [...card.querySelectorAll('button')];
+    buttons.forEach(button => { button.disabled = true; });
+    try {
+      const resource = resend || pending ? 'reservas' : 'turnos';
+      const action = resend ? 'resend-confirmation' : pay ? 'payment-link' : 'cancel';
+      const res = await auth.authFetch(`/api/me/${resource}/${encodeURIComponent(id)}/${action}`, {
+        method: resend || pay ? 'POST' : 'PATCH'
+      });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) return alert(data.error || 'No se pudo cancelar.');
-      await cargarReservas();
-    }
-
-    if (target.classList.contains('btn-cancelar')) {
-      if (!confirm('¿Seguro querés cancelar esta reserva?')) return;
-      const res = await auth.authFetch('/api/me/turnos/' + id + '/cancel', { method: 'PATCH' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return alert(data.error || 'No se pudo cancelar.');
-      await cargarReservas();
-    }
-
-    if (target.classList.contains('btn-pagar')) {
-      target.disabled = true;
-      try {
-        const res = await auth.authFetch('/api/me/turnos/' + id + '/payment-link', { method: 'POST' });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.pagoUrl) {
-          alert(data.error || 'No se pudo generar el link de pago.');
-        } else {
-          window.open(data.pagoUrl, '_blank');
-        }
-      } finally {
-        target.disabled = false;
+      if (!res.ok) {
+        alert(data.error || 'No se pudo completar la operación. Intentá nuevamente.');
+        return;
       }
+      if (resend) {
+        alert(data.mensaje || 'Correo reenviado.');
+      } else if (pay) {
+        let url;
+        try { url = new URL(data.pagoUrl); } catch (_) { throw new Error('Link inválido'); }
+        if (url.protocol !== 'https:') throw new Error('Link inválido');
+        // A second explicit click works even when popups after async requests are blocked.
+        card.querySelector('.enlace-pago')?.remove();
+        const link = document.createElement('a');
+        link.className = 'enlace-pago btn btn-sm btn-success d-block mt-2';
+        link.href = url.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Abrir pago seguro';
+        target.parentElement.appendChild(link);
+        link.focus();
+      } else {
+        await cargarReservas();
+      }
+    } catch (_) {
+      alert('No se pudo completar la operación. Intentá nuevamente.');
+    } finally {
+      buttons.forEach(button => { button.disabled = false; });
     }
   });
 
@@ -241,6 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     modoLectura();
     await cargarReservas();
   } catch (error) {
-    console.error(error);
+    if (info) info.textContent = 'No se pudieron cargar tus datos. Recargá la página para reintentar.';
+    await cargarReservas();
   }
 });
