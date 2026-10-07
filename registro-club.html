@@ -266,7 +266,6 @@
     const direccion = `${calle} ${numero}, ${localidad}, ${provincia}`;
     const body = { nombre, email, password, telefono, direccion, provincia, localidad, latitud, longitud };
 
-    console.log("📤 Enviando /registro-club:", body);
 
     try {
       const res = await fetch(`${API_BASE_URL}/registro-club`, {
@@ -288,7 +287,7 @@
         window.location.href = "login-club.html";
       }, 2000);
     } catch (err) {
-      console.error("❌ Error /registro-club:", err);
+      console.error("❌ Error /registro-club:");
       document.getElementById("mensaje").innerHTML =
         `<div class="alert alert-danger mt-2">Error de conexión con el servidor.</div>`;
     }

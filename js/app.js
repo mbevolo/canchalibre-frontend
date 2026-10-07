@@ -18,7 +18,7 @@ async function resolverClubEmailDesdeId(clubId) {
     const club = await res.json();
     return club?.email || null;
   } catch (e) {
-    console.error('❌ Error resolviendo clubId -> email:', e);
+    console.error("❌ Error resolviendo clubId -> email:");
     return null;
   }
 }
@@ -83,7 +83,7 @@ async function obtenerClubes() {
     if (!res.ok) throw new Error('Respuesta no OK al obtener clubes');
     return await res.json();
   } catch (e) {
-    console.error('❌ Error al obtener clubes:', e);
+    console.error("❌ Error al obtener clubes:");
     return [];
   }
 }
@@ -153,7 +153,7 @@ async function cargarUbicaciones() {
     });
 
   } catch (err) {
-    console.error('❌ Error al cargar ubicaciones:', err);
+    console.error("❌ Error al cargar ubicaciones:");
   }
 }
 
@@ -164,7 +164,7 @@ async function cargarClubs(provincia, localidad) {
   clubSelect.innerHTML = '<option value="">Todos los clubes</option>';
 
   if (!localidad) {
-    console.log('ℹ️ cargarClubs: localidad vacía, no cargo clubes.');
+
 
     // Si el club vino por URL y ya está resuelto, lo intento setear igual
     if (CLUB_EMAIL_FROM_URL) {
@@ -189,7 +189,7 @@ async function cargarClubs(provincia, localidad) {
     });
 
     if (data.length === 0) {
-      console.warn('⚠️ No hay clubes para esa localidad (revisar datos en la BD).');
+      console.warn("⚠️ No hay clubes para esa localidad (revisar datos en la BD).");
     }
 
     // Si el club vino por URL y ya lo resolvimos a email -> lo preseleccionamos
@@ -198,7 +198,7 @@ async function cargarClubs(provincia, localidad) {
 
       const existe = Array.from(clubSelect.options).some(o => o.value === CLUB_EMAIL_FROM_URL);
       if (!existe) {
-        console.warn('⚠️ El club del link no existe en la lista cargada para esa provincia/localidad.');
+        console.warn("⚠️ El club del link no existe en la lista cargada para esa provincia/localidad.");
       }
 
       clubSelect.disabled = true;
@@ -211,7 +211,7 @@ async function cargarClubs(provincia, localidad) {
     }
 
   } catch (err) {
-    console.error('❌ Error cargando clubes:', err);
+    console.error("❌ Error cargando clubes:");
   }
 }
 
@@ -320,14 +320,13 @@ async function reverseGeocode(lat, lon) {
     const provincia = normalizarProvinciaGPS(provinciaRAW);
     const localidad = localidadRAW;
 
-    console.log("📌 Provincia detectada:", provincia);
-    console.log("📌 Localidad detectada:", localidad);
+
 
     if (provincia && localidad) {
       autocompletarProvinciaLocalidad(provincia, localidad);
     }
   } catch (err) {
-    console.error("❌ Error en reverse geocoding:", err);
+    console.error("❌ Error en reverse geocoding:");
   }
 }
 
@@ -339,11 +338,10 @@ async function autocompletarProvinciaLocalidad(provincia, localidad) {
   const selLoc = document.getElementById("localidad");
   if (!selProv || !selLoc) return;
 
-  console.log("🎯 Intentando autocompletar:", provincia, localidad);
 
   // ✅ Si viene club por URL (QR), NO autocompletamos por GPS (para no pisar el flujo)
   if (CLUB_EMAIL_FROM_URL) {
-    console.log("🔒 Club fijo por URL detectado. Se omite autocompletado por GPS.");
+
     const clubSelect = document.getElementById('club');
     if (clubSelect) {
       clubSelect.value = CLUB_EMAIL_FROM_URL;
@@ -398,7 +396,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     CLUB_EMAIL_FROM_URL = await resolverClubEmailDesdeId(CLUB_ID_RAW_FROM_URL);
 
     if (CLUB_EMAIL_FROM_URL) {
-      console.log('🔒 Club fijado por QR:', CLUB_EMAIL_FROM_URL);
+
 
       // Bloquear provincia/localidad para que no cambien el club fijado
       const selProv = document.getElementById('provincia');
@@ -412,7 +410,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         clubSelect.disabled = true;
       }
     } else {
-      console.warn('⚠️ clubId inválido o no encontrado. Se ignora preselección.');
+      console.warn("⚠️ clubId inválido o no encontrado. Se ignora preselección.");
     }
   }
 
@@ -420,7 +418,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!CLUB_EMAIL_FROM_URL && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (pos) => reverseGeocode(pos.coords.latitude, pos.coords.longitude),
-      (err) => console.warn("⚠️ No se pudo obtener la ubicación automática:", err.message)
+      (err) => console.warn("⚠️ No se pudo obtener la ubicación automática:")
     );
   }
 
@@ -433,7 +431,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       navigator.geolocation.getCurrentPosition(
         (pos) => reverseGeocode(pos.coords.latitude, pos.coords.longitude),
-        (err) => console.error("Error geolocalización", err)
+        (err) => console.error("Error geolocalización")
       );
     });
   }
@@ -591,7 +589,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           if (searchStatus) { searchStatus.dataset.state = 'empty'; searchStatus.textContent = 'No hay turnos disponibles con estos filtros. Probá otra hora, fecha o club.'; }
         }
       } catch (error) {
-        console.error('Error al cargar turnos:', error);
+        console.error("Error al cargar turnos:");
         if (searchStatus) { searchStatus.dataset.state = 'error'; searchStatus.textContent = 'No pudimos cargar los turnos. Podés volver a buscar.'; }
       } finally {
         searching = false;
@@ -683,7 +681,7 @@ const respuesta = await auth.authFetch('/reservas/hold', {
               alert('❌ No se pudo crear la reserva: ' + (data.error || 'Error desconocido.'));
             }
           } catch (error) {
-            console.error('❌ Error en /reservas/hold:', error);
+            console.error("❌ Error en /reservas/hold:");
             alert('❌ No se pudo conectar con el servidor.');
           } finally {
             botonConfirmar.disabled = false;
@@ -707,13 +705,12 @@ async function obtenerUbicacion() {
       enableHighAccuracy: true
     });
 
-    console.log("📍 Ubicación obtenida:", pos);
 
     // ✅ usa reverseGeocode global
     reverseGeocode(pos.coords.latitude, pos.coords.longitude);
 
   } catch (err) {
-    console.error("❌ Error obteniendo GPS:", err);
+    console.error("❌ Error obteniendo GPS:");
     alert("No fue posible obtener tu ubicación.");
   }
 }

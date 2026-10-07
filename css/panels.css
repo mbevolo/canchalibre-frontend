@@ -1,0 +1,48 @@
+:root { --cl-ink: #172b35; --cl-muted: #52646c; --cl-green: #087c5c; --cl-border: #dce5e7; }
+body.panel-ui { background: #f3f6f7 !important; color: var(--cl-ink); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+.panel-ui .container { max-width: 1180px; }
+.panel-ui h1 { font-size: clamp(1.65rem, 3vw, 2.2rem); font-weight: 700; letter-spacing: -.04em; }
+.panel-ui h2 { font-size: 1.4rem; font-weight: 650; }
+.panel-ui a { text-underline-offset: 3px; }
+.panel-ui .btn { border-radius: 9px; }
+.panel-ui .btn-primary, .panel-ui .btn-success { background: var(--cl-green); border-color: var(--cl-green); color: white; }
+.panel-ui .btn-primary:hover, .panel-ui .btn-success:hover { background: #055d45; border-color: #055d45; }
+.panel-ui .text-muted { color: var(--cl-muted) !important; }
+.panel-ui .card, .panel-ui .modal-content { border: 1px solid var(--cl-border); border-radius: 14px; box-shadow: 0 4px 18px #172b3508; }
+.panel-ui .form-control, .panel-ui .form-select { border-color: #a9bbc3; border-radius: 8px; }
+.panel-ui :focus-visible { outline: 3px solid #0d6efd; outline-offset: 3px; }
+.panel-ui .nav-tabs { gap: 4px; border-bottom: 1px solid var(--cl-border); }
+.panel-ui .nav-tabs .nav-link { color: var(--cl-muted); border-radius: 10px 10px 0 0; }
+.panel-ui .nav-tabs .nav-link.active { color: var(--cl-green); font-weight: 650; }
+.panel-ui .tab-content { background: white; border: 1px solid var(--cl-border); border-radius: 0 0 14px 14px; padding: 20px; }
+.panel-ui .tab-content .tab-content { border: 0; padding: 16px 0 0; }
+.panel-ui .table { vertical-align: middle; font-size: .94rem; }
+.panel-ui .table th { color: var(--cl-muted); font-size: .8rem; font-weight: 700; }
+.panel-ui .table td { overflow-wrap: anywhere; }
+.panel-ui .table-responsive { border-radius: 10px; }
+.panel-ui .panel-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.panel-ui #superadmin-content { overflow-x: auto; min-height: 260px; padding: 20px; background: white; border: 1px solid var(--cl-border); border-radius: 14px; }
+.panel-ui #menu-superadmin .active { background: var(--cl-green); border-color: var(--cl-green); }
+.panel-ui .panel-brand { padding: 16px 24px; background: var(--cl-ink); color: white; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.panel-ui .panel-brand a { color: white; text-decoration: none; font-weight: 750; }
+.panel-ui .skip-link { position: absolute; left: 12px; top: -80px; padding: 12px; background: white; color: var(--cl-ink); z-index: 2000; }
+.panel-ui .skip-link:focus { top: 8px; }
+@media (max-width: 600px) {
+ .panel-ui .tab-content { padding: 12px; }
+ .panel-ui .nav-tabs { flex-wrap: nowrap; overflow-x: auto; }
+ .panel-ui .nav-tabs .nav-link { white-space: nowrap; }
+ .panel-ui .nav-tabs .nav-item { flex-shrink: 0; }
+ .panel-ui .fc-header-toolbar { flex-wrap: wrap; gap: 8px; }
+ .panel-ui .panel-brand { padding: 12px; }
+ .panel-ui #menu-superadmin { display: flex; flex-direction: row; overflow-x: auto; margin-bottom: 16px; }
+ .panel-ui #menu-superadmin button { white-space: nowrap; width: auto; border-radius: 8px; }
+ .panel-ui #superadmin-content { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .panel-ui *, .panel-ui *::before, .panel-ui *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+.panel-ui .table-responsive > .table { min-width: 760px; }
+.panel-ui .table td:last-child .btn { white-space: nowrap; }
+.panel-ui .table td:last-child { min-width: 175px; }
+@media (max-width: 600px) {
+ .panel-ui #superadmin-content table { min-width: 720px; }
+ .panel-ui .table-responsive::before { content: 'Deslizá para ver todas las columnas'; display: block; padding: 0 0 12px; color: var(--cl-muted); font-size: .8rem; }
+}

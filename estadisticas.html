@@ -21,13 +21,16 @@
       background: white;
     }
   </style>
+  <link rel="stylesheet" href="css/panels.css">
 </head>
 
-<body class="bg-light">
+<body class="bg-light panel-ui">
+<a href="#contenido-principal" class="skip-link">Ir al contenido</a>
+<nav class="panel-brand" aria-label="CanchaLibre"><a href="index.html">CanchaLibre</a><span>Tu espacio de gestión</span></nav>
 
   <!-- NAV -->
   <nav class="navbar navbar-expand-lg bg-white shadow-sm">
-    <div class="container">
+    <div id="contenido-principal" tabindex="-1" class="container">
       <a class="navbar-brand" href="panel-club.html">CanchaLibre · Club</a>
       <div class="ms-auto">
         <a href="panel-club.html" class="btn btn-outline-secondary btn-sm">Volver al panel</a>

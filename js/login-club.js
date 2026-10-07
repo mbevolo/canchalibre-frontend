@@ -6,9 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (formLogin) {
         formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const button = formLogin.querySelector('button[type=submit]');
+            if (button.disabled) return;
+            button.disabled = true;
+            button.textContent = 'Ingresando…';
 
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const password = document.getElementById('password').value;
 
             try {
                 const res = await fetch(window.CanchaLibreApiUrl('/login-club'), {
@@ -50,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = 'panel-club.html';
 
             } catch (error) {
-                console.error('Error al enviar la solicitud:', error);
+                console.error("Error al enviar la solicitud:");
                 alert('Error de red o servidor.');
-            }
+            } finally { button.disabled = false; button.textContent = 'Iniciar sesión'; }
         });
     }
 

@@ -15,7 +15,7 @@
         init = { ...init, headers };
       }
     } catch (e) {
-      console.warn('No se pudo adjuntar autenticación de club a la solicitud.');
+      console.warn("No se pudo adjuntar autenticación de club a la solicitud.");
     }
     return originalFetch(input, init);
   };

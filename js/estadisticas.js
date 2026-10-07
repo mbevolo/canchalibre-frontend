@@ -115,7 +115,7 @@ async function cargarOverview(token, anio, mes) {
     renderOcupacionPorCancha(data.ocupacionPorCancha);
 
   } catch (err) {
-    console.error("Error cargando overview:", err);
+    console.error("Error cargando overview:");
   }
 }
 

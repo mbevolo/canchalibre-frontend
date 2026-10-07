@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const footerHTML = `
         <footer style="text-align:center; padding:20px; margin-top:40px; font-size:14px; background:#f7f7f7;">
-            <p>CanchaLibre © 2025 – Todos los derechos reservados.</p>
+            <p>CanchaLibre © ${new Date().getFullYear()} – Todos los derechos reservados.</p>
             <p>CanchaLibre es una plataforma de intermediación entre usuarios y clubes.</p>
             <p>
                 <a href="terminos-usuarios.html">Términos y Condiciones</a> ·

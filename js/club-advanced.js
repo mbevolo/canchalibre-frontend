@@ -58,7 +58,7 @@ function escapeClubHtml(value) {
         init = { ...init, headers };
       }
     } catch (e) {
-      console.warn('No se pudo adjuntar autenticación de club a la solicitud.');
+      console.warn("No se pudo adjuntar autenticación de club a la solicitud.");
     }
     return originalFetch(input, init);
   };
@@ -82,6 +82,13 @@ async function cargarConfigDestacado() {
 // Lógica principal del panel
 // ============================
 document.addEventListener('DOMContentLoaded', async () => {
+  const clubNav = document.getElementById('clubTabs');
+  function alignSelectedClubTab() {
+    const selected = clubNav?.querySelector('.nav-link.active');
+    if (selected && clubNav.scrollWidth > clubNav.clientWidth) clubNav.scrollLeft = selected.offsetLeft - clubNav.offsetLeft;
+  }
+  clubNav?.addEventListener('shown.bs.tab', alignSelectedClubTab);
+  window.addEventListener('resize', alignSelectedClubTab);
   await cargarConfigDestacado();
 
   const nombreClub = localStorage.getItem('clubNombre');
@@ -265,7 +272,7 @@ btnGenerarQR.addEventListener('click', async () => {
       ultimoQRDataUrl = canvasFinal.toDataURL('image/png');
       btnDescargarQR.disabled = false;
     } catch (e) {
-      console.error(e);
+      console.error("Error en la interfaz");
       // Si falla toDataURL casi seguro es CORS del logo
       alert('⚠️ No se pudo preparar la descarga con logo. Asegurate de que el logo sea local (mismo dominio) o un dataURL.');
     } finally {
@@ -432,7 +439,7 @@ btnDescargarQR.addEventListener('click', () => {
       await cargarProvinciasYLocalidades();
     }
   } catch (err) {
-    console.error('❌ Error al obtener datos del club:', err);
+    console.error("❌ Error al obtener datos del club:");
   }
 
   // Render destaque + init QR/link
@@ -477,7 +484,7 @@ btnDescargarQR.addEventListener('click', () => {
         if (inputToken) inputToken.value = club.mercadoPagoAccessToken;
       }
     } catch (error) {
-      console.error('Error al cargar club:', error);
+      console.error("Error al cargar club:");
       alert('No se pudo cargar la información del club');
     }
   }
@@ -1115,9 +1122,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       const telefonoWa = telefonoReserva ? formatearTelefono(telefonoReserva) : '';
 
       const iconoWhatsApp = `
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-             alt="WhatsApp"
-             style="width: 18px; vertical-align: middle; margin-left: 4px;">
+        WhatsApp
       `;
 
       let htmlTelefono;
@@ -1293,7 +1298,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
         }
       });
     } catch (error) {
-      console.error('Error al cargar provincias y localidades:', error);
+      console.error("Error al cargar provincias y localidades:");
     }
 
     // Guardar datos editados del club
@@ -1323,7 +1328,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
             alert(data.error || 'Error al actualizar los datos');
           }
         } catch (err) {
-          console.error('❌ Error al guardar datos del club:', err);
+          console.error("❌ Error al guardar datos del club:");
           alert('Error al guardar datos del club');
         }
       });
@@ -1380,7 +1385,7 @@ if (duracionInput) duracionInput.value = String(cancha.duracionTurno || 60);
       });
     } catch (err) {
       contenedor.innerHTML = `<p class="text-danger">Error al cargar reservas de hoy.</p>`;
-      console.error(err);
+      console.error("Error en la interfaz");
     }
   }
 

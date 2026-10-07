@@ -12,11 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  window.addEventListener('resize', () => {
+    const selected = menu.querySelector('.active');
+    if (selected && menu.scrollWidth > menu.clientWidth) menu.scrollLeft = selected.offsetLeft - menu.offsetLeft;
+  });
+
   // Cambiar de sección
   menu.addEventListener('click', e => {
     if (e.target.classList.contains('list-group-item')) {
       menu.querySelectorAll('.list-group-item').forEach(btn => btn.classList.remove('active'));
       e.target.classList.add('active');
+      if (menu.scrollWidth > menu.clientWidth) menu.scrollLeft = e.target.offsetLeft - menu.offsetLeft;
       cargarSeccion(e.target.dataset.section);
     }
   });

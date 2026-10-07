@@ -159,7 +159,7 @@ if (formRegistro) {
       alert('Registro exitoso. Revisá tu email para verificar la cuenta.');
       window.location.href = 'login.html';
     } catch (err) {
-      console.error('❌ Error de red en registro:', err);
+      console.error("❌ Error de red en registro:");
       alert('Error de red. Intentá nuevamente.');
     }
   });
@@ -172,6 +172,10 @@ const formLogin = document.getElementById('form-login');
 if (formLogin) {
   formLogin.addEventListener('submit', async e => {
     e.preventDefault();
+    const button = formLogin.querySelector('button[type=submit]');
+    if (button.disabled || !formLogin.reportValidity()) return;
+    button.disabled = true;
+    button.textContent = 'Ingresando…';
 
     const email = document.getElementById('email')?.value?.trim() || '';
     const password = document.getElementById('password')?.value || '';
@@ -199,9 +203,9 @@ if (formLogin) {
 
       alert(data?.error || 'No se pudo iniciar sesión.');
     } catch (err) {
-      console.error('❌ Error de red en login:', err);
+      console.error("❌ Error de red en login:");
       alert('Error de red. Intentá nuevamente.');
-    }
+    } finally { button.disabled = false; button.textContent = 'Iniciar sesión'; }
   });
 }
 
@@ -234,7 +238,7 @@ if (btnResend) {
           : (data?.error || 'No se pudo reenviar la verificación.');
       }
     } catch (err) {
-      console.error('❌ Error reenviando verificación:', err);
+      console.error("❌ Error reenviando verificación:");
       if (resendMsg) resendMsg.textContent = 'Error de red. Intentá nuevamente.';
     }
   });

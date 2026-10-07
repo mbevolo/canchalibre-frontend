@@ -31,7 +31,7 @@
               </div>
             </form>
 
-            <div id="mensaje" class="mt-3 text-center"></div>
+            <div id="mensaje" class="mt-3 text-center" role="status" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -46,7 +46,9 @@
 
     document.getElementById('formReset').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nuevaPassword = document.getElementById('password').value.trim();
+      const button = e.currentTarget.querySelector('button[type=submit]');
+      if (button.disabled) return;
+      const nuevaPassword = document.getElementById('password').value;
       const mensajeDiv = document.getElementById('mensaje');
       mensajeDiv.textContent = 'Procesando...';
 
@@ -55,6 +57,8 @@
         return;
       }
 
+      button.disabled = true;
+      button.textContent = 'Actualizando…';
       try {
         const endpoint = tipo === 'club' ? '/reset-club' : '/reset';
         const res = await fetch(window.CanchaLibreApiUrl('') + endpoint, {
@@ -65,16 +69,16 @@
 
         const data = await res.json();
         if (res.ok) {
-          mensajeDiv.innerHTML = `<span class="text-success">${data.mensaje}</span>`;
+          mensajeDiv.className = 'mt-3 text-success'; mensajeDiv.textContent = data.mensaje;
           setTimeout(() => {
             window.location.href = tipo === 'club' ? 'login-club.html' : 'login.html';
           }, 2000);
         } else {
-          mensajeDiv.innerHTML = `<span class="text-danger">${data.error || 'Error al restablecer la contraseña.'}</span>`;
+          mensajeDiv.className = 'mt-3 text-danger'; mensajeDiv.textContent = data.error || 'Error al restablecer la contraseña.';
         }
       } catch (error) {
-        mensajeDiv.innerHTML = `<span class="text-danger">Error de conexión.</span>`;
-      }
+        mensajeDiv.textContent = 'Error de conexión. Intentá nuevamente.';
+      } finally { button.disabled = false; button.textContent = 'Actualizar contraseña'; }
     });
   </script>
   <script src="js/footer.js"></script>

@@ -7,11 +7,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>.card-body > div { min-width: 0; overflow-wrap: anywhere; }</style>
     <script src="config.js"></script>
+  <link rel="stylesheet" href="css/panels.css">
 </head>
-<body class="bg-light">
+<body class="bg-light panel-ui">
+<a href="#contenido-principal" class="skip-link">Ir al contenido</a>
+<nav class="panel-brand" aria-label="CanchaLibre"><a href="index.html">CanchaLibre</a><span>Tu espacio de gestión</span></nav>
 
     
-<div class="container my-4">
+<div class="container my-4" id="contenido-principal" tabindex="-1">
     <h1>Mi cuenta</h1>
     <p id="info-usuario"></p>
     <div class="d-flex gap-2 mb-3">

@@ -18,6 +18,8 @@
             <p class="text-muted text-center">Ingresá tu correo electrónico para recibir un enlace de recuperación.</p>
 
             <form id="formRecuperar">
+              <div class="mb-3"><label for="tipo-cuenta" class="form-label">Tipo de cuenta</label>
+              <select id="tipo-cuenta" class="form-select"><option value="usuario">Usuario</option><option value="club">Club</option></select></div>
               <div class="mb-3">
                 <label for="email" class="form-label">Correo electrónico</label>
                 <input type="email" id="email" class="form-control" placeholder="ejemplo@correo.com" required>
@@ -28,7 +30,7 @@
               </div>
             </form>
 
-            <div id="mensaje" class="mt-3 text-center"></div>
+            <div id="mensaje" class="mt-3 text-center" role="status" aria-live="polite"></div>
 
             <div class="text-center mt-3">
               <a href="login.html">Volver al inicio de sesión</a>
@@ -40,14 +42,19 @@
   </div>
 
   <script>
+    document.getElementById('tipo-cuenta').value = new URLSearchParams(location.search).get('tipo') === 'club' ? 'club' : 'usuario';
     document.getElementById('formRecuperar').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const button = e.currentTarget.querySelector('button[type=submit]');
+      if (button.disabled) return;
+      button.disabled = true;
+      button.textContent = 'Enviando…';
       const email = document.getElementById('email').value.trim();
       const mensajeDiv = document.getElementById('mensaje');
       mensajeDiv.textContent = 'Enviando...';
 
       try {
-        const endpoint = email.includes('club') ? '/recuperar-club' : '/recuperar'; // opcional: según correo
+        const endpoint = document.getElementById('tipo-cuenta').value === 'club' ? '/recuperar-club' : '/recuperar';
         const res = await fetch(window.CanchaLibreApiUrl('') + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -56,13 +63,13 @@
 
         const data = await res.json();
         if (res.ok) {
-          mensajeDiv.innerHTML = `<span class="text-success">${data.mensaje}</span>`;
+          mensajeDiv.className = 'mt-3 text-success'; mensajeDiv.textContent = data.mensaje;
         } else {
-          mensajeDiv.innerHTML = `<span class="text-danger">${data.error || 'Error al enviar el correo.'}</span>`;
+          mensajeDiv.className = 'mt-3 text-danger'; mensajeDiv.textContent = data.error || 'Error al enviar el correo.';
         }
       } catch (error) {
-        mensajeDiv.innerHTML = `<span class="text-danger">Error de conexión.</span>`;
-      }
+        mensajeDiv.className = 'mt-3 text-danger'; mensajeDiv.textContent = 'Error de conexión. Intentá nuevamente.';
+      } finally { button.disabled = false; button.textContent = 'Enviar enlace'; }
     });
   </script>
   <script src="js/footer.js"></script>
