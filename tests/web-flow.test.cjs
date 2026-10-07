@@ -84,3 +84,47 @@ test('reservation sends JWT, blocks double click, and can retry after failure', 
     await until(() => calls.filter(call => call.url.endsWith('/reservas/hold')).length === 2);
   } finally { dom.window.close(); }
 });
+
+test('search blocks duplicate submits, recovers after failure and renders safe reservation actions', async () => {
+  const calls = [];
+  let resolveSearch, attempts = 0;
+  const pending = new Promise(resolve => { resolveSearch = resolve; });
+  const baseFetch = sessionFetch(calls);
+  const fixture = { canchaId: 'court-test', club: 'club@example.com', deporte: 'padel', fecha: '2030-01-10', hora: '10:00', precio: 1000, duracionTurno: 60 };
+  const dom = await page('index.html', async (url, options) => {
+    if (url.includes('/turnos-generados?')) {
+      attempts++;
+      if (attempts === 1) return pending;
+      return response(200, attempts === 2 ? [fixture] : []);
+    }
+    if (url.includes('/clubes')) return response(200, [{ email: fixture.club, nombre: 'Club <img src=x onerror=alert(1)>' }]);
+    return baseFetch(url, options);
+  });
+  try {
+    await until(() => calls.some(c => c.url.endsWith('/ubicaciones')));
+    await tick(); await tick();
+    const doc = dom.window.document, form = doc.getElementById('formulario-busqueda'), button = form.querySelector('button[type="submit"]');
+    doc.getElementById('deporte').value = fixture.deporte;
+    doc.getElementById('fecha').value = fixture.fecha;
+    const submit = () => form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    submit(); submit();
+    await until(() => attempts === 1);
+    assert.equal(button.disabled, true);
+    assert.equal(doc.getElementById('resultados').getAttribute('aria-busy'), 'true');
+    assert.match(doc.getElementById('estado-busqueda').textContent, /Buscando/);
+    resolveSearch(response(503, {}));
+    await until(() => !button.disabled);
+    assert.match(doc.getElementById('estado-busqueda').textContent, /volver a buscar/);
+    submit(); await until(() => !button.disabled);
+    assert.equal(attempts, 2);
+    assert.equal(doc.getElementById('estado-busqueda').textContent, '1 turno disponible');
+    const reserve = doc.querySelector('#resultados .turno button');
+    assert.equal(reserve.getAttribute('onclick'), null);
+    assert.equal(doc.querySelector('#resultados img'), null);
+    reserve.click();
+    assert.equal(JSON.parse(dom.window.localStorage.getItem('turnoSeleccionado')).canchaId, fixture.canchaId);
+    submit(); await until(() => !button.disabled);
+    assert.match(doc.getElementById('estado-busqueda').textContent, /Probá otra hora/);
+    assert.equal(doc.getElementById('resultados').getAttribute('aria-busy'), 'false');
+  } finally { dom.window.close(); }
+});

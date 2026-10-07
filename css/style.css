@@ -496,3 +496,21 @@ body {
 .pagina-detalle header p {
   color: #4b5563;
 }
+
+/* Feedback de búsqueda visible y anunciado por lectores de pantalla. */
+.estado-busqueda:not(:empty) {
+  max-width: 1100px;
+  margin: 20px auto 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #edf7f2;
+  color: #174c34;
+}
+.estado-busqueda[data-state="error"] { background: #fff0ee; color: #8b2525; }
+.btn-buscar-turnos:disabled { opacity: .75; cursor: wait; }
+.btn-buscar-turnos:focus-visible, .turno button:focus-visible {
+  outline: 3px solid #174c34;
+  outline-offset: 3px;
+}
+
+#resultados:empty { display: none; }

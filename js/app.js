@@ -475,8 +475,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   const resultados = document.getElementById('resultados');
 
   if (formulario && resultados) {
+    const searchButton = formulario.querySelector('button[type="submit"]');
+    const searchStatus = document.getElementById('estado-busqueda');
+    let searching = false;
     formulario.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (searching) return;
+      searching = true;
+      const originalLabel = searchButton?.textContent;
+      if (searchButton) { searchButton.disabled = true; searchButton.textContent = 'Buscando turnos…'; }
+      resultados.setAttribute('aria-busy', 'true');
+      if (searchStatus) { searchStatus.dataset.state = 'loading'; searchStatus.textContent = 'Buscando horarios disponibles…'; }
 
       const deporteSeleccionado = document.getElementById('deporte')?.value || '';
       const fechaSeleccionada = document.getElementById('fecha')?.value || '';
@@ -534,31 +543,35 @@ window.addEventListener('DOMContentLoaded', async () => {
               <p>Hora: ${sanitizeHTML(turno.hora)}</p>
               <p>Precio: $${Number(turno.precio) || 0}</p>
               <p>Duración: ${formatDuracion(turno.duracionTurno)}</p>
-              <button onclick="guardarTurnoYRedirigir(
-                '${turno.canchaId}',
-                '${turno.club}',
-                '${turno.deporte}',
-                '${turno.fecha}',
-                '${turno.hora}',
-                ${Number(turno.precio) || 0},
-                ${Number(turno.duracionTurno) || 60}
-              )">Reservar</button>
             `;
 
+            const reserveButton = document.createElement('button');
+            reserveButton.type = 'button';
+            reserveButton.textContent = 'Reservar';
+            reserveButton.addEventListener('click', () => guardarTurnoYRedirigir(
+              turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora,
+              Number(turno.precio) || 0, Number(turno.duracionTurno) || 60
+            ));
+            turnoDiv.appendChild(reserveButton);
             resultados.appendChild(turnoDiv);
           });
 
+          if (searchStatus) { searchStatus.dataset.state = 'success'; searchStatus.textContent = `${turnosOrdenados.length} ${turnosOrdenados.length === 1 ? 'turno disponible' : 'turnos disponibles'}`; }
           const botonMapa = document.createElement('button');
           botonMapa.textContent = 'Ver en mapa';
           botonMapa.style.marginTop = '20px';
           botonMapa.addEventListener('click', () => mostrarMapa(turnosOrdenados));
           resultados.appendChild(botonMapa);
         } else {
-          resultados.innerHTML = '<p>No se encontraron turnos disponibles para esa búsqueda.</p>';
+          if (searchStatus) { searchStatus.dataset.state = 'empty'; searchStatus.textContent = 'No hay turnos disponibles con estos filtros. Probá otra hora, fecha o club.'; }
         }
       } catch (error) {
         console.error('Error al cargar turnos:', error);
-        resultados.innerHTML = '<p>Error al cargar los turnos. Intenta nuevamente más tarde.</p>';
+        if (searchStatus) { searchStatus.dataset.state = 'error'; searchStatus.textContent = 'No pudimos cargar los turnos. Podés volver a buscar.'; }
+      } finally {
+        searching = false;
+        resultados.setAttribute('aria-busy', 'false');
+        if (searchButton) { searchButton.disabled = false; searchButton.textContent = originalLabel; }
       }
     });
   }

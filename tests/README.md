@@ -7,3 +7,5 @@ Las pruebas no llaman a producción. Simulan respuestas HTTP y comprueban renova
 jsdom permite probar el HTML y sus eventos. Estas pruebas no verifican el aspecto visual, Leaflet, cookies de un navegador real ni MercadoPago.
 
 Para Chromium: `npx playwright install chromium` y `npm run test:browser`. El navegador prueba buscador, detalle, reserva con JWT, navegación y logout con API y recursos externos simulados; guarda capturas en `.test-artifacts`. Se puede indicar un ejecutable disponible con `CHROMIUM_EXECUTABLE_PATH` y argumentos JSON con `CHROMIUM_ARGS`. No utiliza producción ni verifica MercadoPago, Leaflet o cookies reales del backend.
+
+El buscador también verifica bloqueo de submits duplicados, recuperación tras errores, mensajes de carga/vacío/resultado, aria-busy y acciones de reserva sin onclick interpolado. Chromium verifica estado vacío y ancho de 390 px sin desbordamiento; genera capturas de escritorio y móvil.
