@@ -13,7 +13,7 @@ function getClubIdFromUrl() {
 // ✅ Resolver clubId (Mongo _id) -> email usando tu backend
 async function resolverClubEmailDesdeId(clubId) {
   try {
-    const res = await fetch(`https://api.canchalibre.ar/club-id/${encodeURIComponent(clubId)}`);
+    const res = await fetch(window.CanchalibreAuth.apiUrl(`/club-id/${encodeURIComponent(clubId)}`));
     if (!res.ok) throw new Error('No se pudo resolver clubId');
     const club = await res.json();
     return club?.email || null;
@@ -79,7 +79,7 @@ function normalizarTexto(texto) {
 
 async function obtenerClubes() {
   try {
-    const res = await fetch('https://api.canchalibre.ar/clubes');
+    const res = await fetch(window.CanchalibreAuth.apiUrl('/clubes'));
     if (!res.ok) throw new Error('Respuesta no OK al obtener clubes');
     return await res.json();
   } catch (e) {
@@ -109,7 +109,7 @@ async function cargarUbicaciones() {
   if (!provinciaSelect || !localidadSelect) return;
 
   try {
-    const res = await fetch('https://api.canchalibre.ar/ubicaciones');
+    const res = await fetch(window.CanchalibreAuth.apiUrl('/ubicaciones'));
     const data = await res.json();
 
     provinciaSelect.innerHTML = '<option value="">Todas</option>';
@@ -176,7 +176,7 @@ async function cargarClubs(provincia, localidad) {
 
   try {
     const res = await fetch(
-      `https://api.canchalibre.ar/clubes?provincia=${encodeURIComponent(provincia || '')}&localidad=${encodeURIComponent(localidad)}`
+      window.CanchalibreAuth.apiUrl(`/clubes?provincia=${encodeURIComponent(provincia || '')}&localidad=${encodeURIComponent(localidad)}`)
     );
     if (!res.ok) throw new Error('Respuesta no OK al obtener clubes');
     const data = await res.json();
@@ -491,7 +491,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       try {
         const respuesta = await fetch(
-          `https://api.canchalibre.ar/turnos-generados?fecha=${encodeURIComponent(fechaSeleccionada)}&provincia=${encodeURIComponent(provinciaSeleccionada)}&localidad=${encodeURIComponent(localidadSeleccionada)}&club=${encodeURIComponent(clubSeleccionado)}`
+          window.CanchalibreAuth.apiUrl(`/turnos-generados?fecha=${encodeURIComponent(fechaSeleccionada)}&provincia=${encodeURIComponent(provinciaSeleccionada)}&localidad=${encodeURIComponent(localidadSeleccionada)}&club=${encodeURIComponent(clubSeleccionado)}`)
         );
 
         if (!respuesta.ok) throw new Error('Respuesta no OK al obtener turnos');
@@ -571,7 +571,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const detalleDiv = document.getElementById('detalle');
     if (!detalleDiv) return;
 
-    fetch(`https://api.canchalibre.ar/club/${encodeURIComponent(turnoGuardado.club)}`)
+    fetch(window.CanchalibreAuth.apiUrl(`/club/${encodeURIComponent(turnoGuardado.club)}`))
       .then((res) => res.json())
       .then((club) => {
         detalleDiv.innerHTML = `

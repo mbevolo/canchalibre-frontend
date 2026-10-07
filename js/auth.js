@@ -1,6 +1,7 @@
 if (!window.__AUTH_BASE__) {
   window.__AUTH_BASE__ =
     (window.APP_BASE_URL && String(window.APP_BASE_URL)) ||
+    (window.API_BASE_URL && String(window.API_BASE_URL)) ||
     'https://api.canchalibre.ar';
 }
 
