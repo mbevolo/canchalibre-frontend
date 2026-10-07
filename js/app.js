@@ -531,39 +531,61 @@ window.addEventListener('DOMContentLoaded', async () => {
         const turnosOrdenados = ordenarTurnosPorDestacado(turnosFiltrados, clubes);
 
         if (turnosOrdenados.length > 0) {
-          turnosOrdenados.forEach((turno) => {
-            const turnoDiv = document.createElement('div');
-            turnoDiv.classList.add('turno');
-
-            const clubInfo = clubes.find((c) => c.email === turno.club);
-            const esDestacado =
-              clubInfo && clubInfo.destacado && new Date(clubInfo.destacadoHasta) > new Date();
-
-            turnoDiv.innerHTML = `
-              <div class="slot-top"><span class="sport-tag">${sanitizeHTML(turno.deporte)}</span>${esDestacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div>
-              <h3>${sanitizeHTML(clubInfo ? clubInfo.nombre : turno.club)}</h3>
-              <p class="slot-location">${sanitizeHTML([clubInfo?.direccion, clubInfo?.localidad].filter(Boolean).join(' · '))}</p>
-              <div class="slot-time"><strong>${sanitizeHTML(turno.hora)}</strong><span>${sanitizeHTML(formatFecha(turno.fecha))} · ${formatDuracion(turno.duracionTurno)}</span></div>
-              <p class="slot-price">$${(Number(turno.precio) || 0).toLocaleString('es-AR')} <span>por turno</span></p>
-            `;
-
-            const reserveButton = document.createElement('button');
-            reserveButton.type = 'button';
-            reserveButton.textContent = 'Elegir este turno ↗';
-            reserveButton.addEventListener('click', () => guardarTurnoYRedirigir(
-              turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora,
-              Number(turno.precio) || 0, Number(turno.duracionTurno) || 60
-            ));
+          const grupos = new Map();
+          turnosOrdenados.forEach(turno => {
+            if (!grupos.has(turno.club)) grupos.set(turno.club, new Map());
+            const canchas = grupos.get(turno.club);
+            const key = String(turno.canchaId);
+            if (!canchas.has(key)) canchas.set(key, []);
+            canchas.get(key).push(turno);
+          });
+          grupos.forEach((canchas, clubEmail) => {
+            const clubInfo = clubes.find(c => c.email === clubEmail);
+            const nombre = clubInfo?.nombre || clubEmail;
+            const destacado = clubInfo?.destacado && new Date(clubInfo.destacadoHasta) > new Date();
+            const card = document.createElement('article');
+            card.className = 'turno club-result';
+            card.innerHTML = `<div class="slot-top"><span class="sport-tag">${canchas.size} ${canchas.size === 1 ? 'cancha disponible' : 'canchas disponibles'}</span>${destacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div><h3>${sanitizeHTML(nombre)}</h3><p class="slot-location">${sanitizeHTML([clubInfo?.direccion, clubInfo?.localidad, clubInfo?.provincia].filter(Boolean).join(' · '))}</p>`;
             const infoLink = document.createElement('a');
-            infoLink.href = 'club-info.html?club=' + encodeURIComponent(turno.club);
-            infoLink.textContent = 'Ver club, fotos y ubicación ↗';
+            infoLink.href = 'club-info.html?club=' + encodeURIComponent(clubEmail);
             infoLink.className = 'club-info-link';
-            turnoDiv.appendChild(infoLink);
-            turnoDiv.appendChild(reserveButton);
-            resultados.appendChild(turnoDiv);
+            infoLink.textContent = 'Ver club, fotos y ubicación ↗';
+            const portada = clubInfo?.fotos?.[0];
+            if (typeof portada === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(portada)) {
+              const photoLink = document.createElement('a');photoLink.href = infoLink.href;
+              const photo = document.createElement('img');photo.src = portada;photo.alt = `Conocé ${nombre}`;photo.loading = 'lazy';photo.className = 'club-result-photo';photoLink.append(photo);card.prepend(photoLink);
+            }
+            card.append(infoLink);
+            canchas.forEach(slots => {
+              slots.sort((a,b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
+              const first = slots[0];
+              const prices = slots.map(slot => Number(slot.precio) || 0);
+              const minPrice = Math.min(...prices), variable = prices.some(price => price !== minPrice);
+              const section = document.createElement('section');section.className = 'court-slots';
+              section.innerHTML = `<h4>${sanitizeHTML(first.nombreCancha || first.deporte)}</h4><p class="court-slot-meta">${sanitizeHTML(first.deporte)} · ${formatDuracion(first.duracionTurno)} · ${sanitizeHTML(formatFecha(first.fecha))}</p><p class="court-price">${variable ? 'Desde ' : ''}$${minPrice.toLocaleString('es-AR')} <span>por turno</span></p>`;
+              const times = document.createElement('div');times.className = 'slot-buttons';
+              slots.forEach((turno,index) => {
+                const button = document.createElement('button');button.type = 'button';button.className = 'slot-choice';
+                button.hidden = index >= 6;
+                button.textContent = turno.hora;
+                if (variable) { const price = document.createElement('small');price.textContent = '$' + (Number(turno.precio)||0).toLocaleString('es-AR');button.append(price); }
+                button.setAttribute('aria-label', `Reservar ${first.nombreCancha || first.deporte} a las ${turno.hora}, $${Number(turno.precio)||0}`);
+                button.addEventListener('click', () => guardarTurnoYRedirigir(turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora, Number(turno.precio)||0, Number(turno.duracionTurno)||60));
+                times.append(button);
+              });
+              section.append(times);
+              if (slots.length > 6) {
+                const toggle = document.createElement('button');toggle.type = 'button';toggle.className = 'slots-more';toggle.setAttribute('aria-expanded','false');
+                toggle.textContent = `Ver ${slots.length-6} horarios más`;
+                toggle.addEventListener('click', () => { const expanded = toggle.getAttribute('aria-expanded') !== 'true';toggle.setAttribute('aria-expanded',String(expanded));[...times.children].forEach((button,index) => button.hidden = index>=6 && !expanded);toggle.textContent = expanded ? 'Ver menos horarios' : `Ver ${slots.length-6} horarios más`; });
+                section.append(toggle);
+              }
+              card.append(section);
+            });
+            resultados.append(card);
           });
 
-          if (searchStatus) { searchStatus.dataset.state = 'success'; searchStatus.textContent = `${turnosOrdenados.length} ${turnosOrdenados.length === 1 ? 'turno disponible' : 'turnos disponibles'}`; }
+          if (searchStatus) { searchStatus.dataset.state = 'success'; searchStatus.textContent = `${turnosOrdenados.length} ${turnosOrdenados.length === 1 ? 'turno disponible' : 'turnos disponibles'} en ${grupos.size} ${grupos.size === 1 ? 'club' : 'clubes'}`; }
           const botonMapa = document.createElement('button');
           botonMapa.textContent = 'Ver en mapa';
           botonMapa.className = 'map-toggle';

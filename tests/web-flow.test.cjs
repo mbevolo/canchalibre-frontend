@@ -118,7 +118,7 @@ test('search blocks duplicate submits, recovers after failure and renders safe r
     assert.match(doc.getElementById('estado-busqueda').textContent, /volver a buscar/);
     submit(); await until(() => !button.disabled);
     assert.equal(attempts, 2);
-    assert.equal(doc.getElementById('estado-busqueda').textContent, '1 turno disponible');
+    assert.equal(doc.getElementById('estado-busqueda').textContent, '1 turno disponible en 1 club');
     const reserve = doc.querySelector('#resultados .turno button');
     assert.equal(reserve.getAttribute('onclick'), null);
     assert.equal(doc.querySelector('#resultados img'), null);
@@ -146,4 +146,18 @@ test('guest can inspect a slot but confirmation requires login without creating 
     assert.equal(calls.some(url => url.endsWith('/reservas/hold')), false);
     assert.equal(JSON.parse(dom.window.localStorage.getItem('turnoSeleccionado')).canchaId, selected.canchaId);
   } finally { dom.window.close(); }
+});
+
+test('search groups courts by club, expands schedules and preserves the chosen slot price', async () => {
+ const calls=[];const slots=Array.from({length:9},(_,i)=>({canchaId:'court-a',nombreCancha:'Pádel A',club:'club@test.local',deporte:'padel',fecha:'2030-01-10',hora:`${String(i+10).padStart(2,'0')}:00`,precio:i<6?1000:1500,duracionTurno:60}));
+ slots.push({...slots[0],canchaId:'court-b',nombreCancha:'Pádel B'});
+ slots.push({...slots[0],canchaId:'court-c',club:'other@test.local'});
+ const base=sessionFetch(calls);
+ const dom=await page('index.html',async(url,opts)=>url.includes('/turnos-generados?')?response(200,slots):url.includes('/clubes')?response(200,[{email:'club@test.local',nombre:'Club A'},{email:'other@test.local',nombre:'Club B'}]):base(url,opts));
+ try{await until(()=>calls.some(c=>c.url.endsWith('/ubicaciones')));await tick();
+ const d=dom.window.document;d.getElementById('deporte').value='padel';d.getElementById('fecha').value='2030-01-10';d.getElementById('formulario-busqueda').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));await until(()=>d.querySelectorAll('.club-result').length===2);
+ assert.equal(d.querySelectorAll('.club-result')[0].querySelectorAll('.court-slots').length,2);
+ const court=d.querySelector('.court-slots');assert.equal(court.querySelectorAll('.slot-choice:not([hidden])').length,6);const more=court.querySelector('.slots-more');more.click();assert.equal(more.getAttribute('aria-expanded'),'true');assert.equal(court.querySelectorAll('.slot-choice:not([hidden])').length,9);
+ court.querySelectorAll('.slot-choice')[8].click();const selected=JSON.parse(dom.window.localStorage.getItem('turnoSeleccionado'));assert.equal(selected.canchaId,'court-a');assert.equal(selected.hora,'18:00');assert.equal(selected.precio,1500);more.click();assert.equal(court.querySelectorAll('.slot-choice:not([hidden])').length,6);
+ }finally{dom.window.close();}
 });
