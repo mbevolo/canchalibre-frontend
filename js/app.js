@@ -540,19 +540,16 @@ window.addEventListener('DOMContentLoaded', async () => {
               clubInfo && clubInfo.destacado && new Date(clubInfo.destacadoHasta) > new Date();
 
             turnoDiv.innerHTML = `
-              <h3>${sanitizeHTML(clubInfo ? clubInfo.nombre : turno.club)} 
-                ${esDestacado ? '<span style="color:gold;font-size:1.2em;">⭐ Club Destacado</span>' : ''}
-              </h3>
-              <p>Deporte: ${sanitizeHTML(turno.deporte)}</p>
-<p>Fecha: ${sanitizeHTML(formatFecha(turno.fecha))}</p>
-              <p>Hora: ${sanitizeHTML(turno.hora)}</p>
-              <p>Precio: $${Number(turno.precio) || 0}</p>
-              <p>Duración: ${formatDuracion(turno.duracionTurno)}</p>
+              <div class="slot-top"><span class="sport-tag">${sanitizeHTML(turno.deporte)}</span>${esDestacado ? '<span class="featured-tag">Destacado</span>' : '<span class="available-tag">Disponible</span>'}</div>
+              <h3>${sanitizeHTML(clubInfo ? clubInfo.nombre : turno.club)}</h3>
+              <p class="slot-location">${sanitizeHTML(clubInfo?.localidad || '')}</p>
+              <div class="slot-time"><strong>${sanitizeHTML(turno.hora)}</strong><span>${sanitizeHTML(formatFecha(turno.fecha))} · ${formatDuracion(turno.duracionTurno)}</span></div>
+              <p class="slot-price">$${(Number(turno.precio) || 0).toLocaleString('es-AR')} <span>por turno</span></p>
             `;
 
             const reserveButton = document.createElement('button');
             reserveButton.type = 'button';
-            reserveButton.textContent = 'Reservar';
+            reserveButton.textContent = 'Elegir este turno ↗';
             reserveButton.addEventListener('click', () => guardarTurnoYRedirigir(
               turno.canchaId, turno.club, turno.deporte, turno.fecha, turno.hora,
               Number(turno.precio) || 0, Number(turno.duracionTurno) || 60
@@ -564,6 +561,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           if (searchStatus) { searchStatus.dataset.state = 'success'; searchStatus.textContent = `${turnosOrdenados.length} ${turnosOrdenados.length === 1 ? 'turno disponible' : 'turnos disponibles'}`; }
           const botonMapa = document.createElement('button');
           botonMapa.textContent = 'Ver en mapa';
+          botonMapa.className = 'map-toggle';
           botonMapa.style.marginTop = '20px';
           botonMapa.addEventListener('click', () => mostrarMapa(turnosOrdenados));
           resultados.appendChild(botonMapa);

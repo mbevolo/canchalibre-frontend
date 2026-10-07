@@ -5,35 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CanchaLibre - Reserva tu cancha</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sport.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="config.js"></script>
 </head>
-<body>
-<div id="barra-usuario" class="barra-usuario">
-    <div class="usuario-linea">
-        <span id="usuario-logueado"></span>
-    </div>
-    <div class="usuario-opciones">
-        <a href="panel-usuario.html" class="usuario-link">Mi cuenta</a>
-        <span class="separador">|</span>
-        <a id="logout" class="usuario-link" style="display:none;">Cerrar sesión</a>
-    </div>
-</div>
-
-
-<header class="hero-header">
-    <div class="hero-overlay">
-        <img src="img/canchalibre-logo transparente.png" alt="CanchaLibre" class="hero-logo">
-        <p class="hero-subtitle">Encontrá tu cancha disponible en segundos</p>
-    </div>
+<body class="v2-sport">
+<nav class="sport-nav" aria-label="Navegación principal">
+<a class="sport-brand" href="index.html">Cancha<span>Libre</span><i aria-hidden="true">↗</i></a>
+<div id="barra-usuario" class="barra-usuario"><span id="usuario-logueado"></span><div class="usuario-opciones"><a href="login-club.html" class="usuario-link">Soy un club</a><a href="panel-usuario.html" class="usuario-link">Mi cuenta</a><a id="logout" class="usuario-link" style="display:none;">Cerrar sesión</a></div></div>
+</nav>
+<header class="sport-hero">
+<div class="sport-hero-copy"><span class="eyebrow">MENOS VUELTAS. MÁS PARTIDOS.</span><h1>Tu próximo partido<br>empieza <em>acá.</em></h1><p>Encontrá cancha, elegí tu horario y salí a jugar.<br>Fútbol, pádel y tenis, cerca tuyo.</p><a class="hero-cta" href="#formulario-busqueda">Encontrar mi cancha ↗</a><small>Buscá libremente. Iniciá sesión al reservar.</small></div>
+<div class="court-scene" aria-hidden="true"><div class="court-lines"><div class="court-net"></div></div><span class="court-ball"></span><span class="scene-label">EL PLAN ES JUGAR.</span></div>
 </header>
-
-
-
-
     <main>
 <section class="buscador buscador-card">
-    <h2 class="buscador-titulo">Buscador de Turnos</h2>
+    <div class="search-heading"><div><span class="eyebrow">ENCONTRÁ TU LUGAR</span><h2 class="buscador-titulo">¿Dónde jugamos?</h2></div><p>Elegí deporte, fecha y ubicación.</p></div>
 
     <form id="formulario-busqueda">
         <div class="buscador-inline">
@@ -111,7 +98,7 @@
         </div>
 
         <button type="submit" class="btn-buscar-turnos">
-            Buscar Turnos
+            Buscar turnos ↗
         </button>
     </form>
 </section>
@@ -119,6 +106,7 @@
 
 
 
+        <div class="results-heading"><h2>Tu próximo turno</h2><span>Elegí un horario o explorá el mapa</span></div>
         <p id="estado-busqueda" class="estado-busqueda" role="status" aria-live="polite" aria-atomic="true"></p>
         <section id="resultados" class="resultados" aria-label="Turnos disponibles" aria-busy="false">
             <!-- Acá se van a mostrar los turnos encontrados -->

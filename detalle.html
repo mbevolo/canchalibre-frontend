@@ -5,18 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CanchaLibre - Detalle del Turno</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sport.css">
     <script src="config.js"></script>
 </head>
-<body class="pagina-detalle">
+<body class="pagina-detalle v2-sport">
 
-    <header>
-        <h1>CanchaLibre</h1>
-        <p>Confirmá tu reserva</p>
-    </header>
-
+    <nav class="sport-nav" aria-label="Navegación principal"><a class="sport-brand" href="index.html">Cancha<span>Libre</span><i aria-hidden="true">↗</i></a><a href="panel-usuario.html" class="usuario-link">Mi cuenta</a></nav>
+    <header class="detail-heading"><span class="eyebrow">YA CASI ESTÁS EN LA CANCHA</span><h1>Tu plan para jugar.</h1><p>Revisá los datos y confirmá tu turno.</p></header>
     <main>
         <section class="detalle-turno">
-            <h2>Detalle del Turno</h2>
+            <h2>Resumen de tu reserva</h2>
 
             <!-- 🟦 Botón para volver al buscador -->
             <button onclick="window.location.href='index.html'" 
@@ -34,9 +32,10 @@
                 <option value="efectivo">En efectivo en el club</option>
                 <option value="online">Online con MercadoPago</option>
             </select>
-            <p class="text-muted">Si elegís online, te llevamos a MercadoPago para pagar con tarjeta o saldo.</p>
+            <p class="text-muted">Elegí entre las formas de pago disponibles en este club.</p>
 
-            <button id="confirmar-reserva">Confirmar y Reservar</button>
+            <p class="confirmation-note">Te enviaremos un enlace por email. Tu reserva queda confirmada cuando lo abrís.</p>
+            <button id="confirmar-reserva">Confirmar y reservar ↗</button>
 
             <div id="link-invitacion" style="margin-top:20px;"></div>
             <div id="link-pago" style="margin-top:20px;"></div>
