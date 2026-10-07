@@ -16,25 +16,21 @@
         <section class="detalle-turno">
             <h2>Resumen de tu reserva</h2>
 
-            <!-- 🟦 Botón para volver al buscador -->
-            <button onclick="window.location.href='index.html'" 
-                    style="margin-bottom: 15px;" 
-                    class="btn btn-secondary">
-                ← Volver al buscador
-            </button>
+            <a class="summary-back" href="index.html">← Cambiar turno</a>
 
             <div id="detalle">
                 <!-- Se cargan los datos del turno -->
             </div>
 
+            <div class="summary-payment"><span class="eyebrow">01 · FORMA DE PAGO</span>
             <label for="metodo-pago" style="margin-top: 15px;">¿Cómo querés pagar?</label>
             <select id="metodo-pago" class="form-select" required>
                 <option value="efectivo">En efectivo en el club</option>
                 <option value="online">Online con MercadoPago</option>
             </select>
-            <p class="text-muted">Elegí entre las formas de pago disponibles en este club.</p>
+            <p class="text-muted">El importe corresponde al turno completo.</p></div>
 
-            <p class="confirmation-note">Te enviaremos un enlace por email. Tu reserva queda confirmada cuando lo abrís.</p>
+            <div class="confirmation-note"><span class="eyebrow">02 · CONFIRMACIÓN POR EMAIL</span><p>Te enviaremos un enlace válido por 10 minutos. Abrilo para confirmar tu reserva.</p><small>Después recibirás otro correo con todos los datos del turno.</small></div>
             <button id="confirmar-reserva">Confirmar y reservar ↗</button>
 
             <div id="link-invitacion" style="margin-top:20px;"></div>

@@ -587,37 +587,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     const detalleDiv = document.getElementById('detalle');
     if (!detalleDiv) return;
 
+    function mostrarResumen(club) {
+      detalleDiv.innerHTML = `
+        <div class="summary-club"><span class="sport-tag">${sanitizeHTML(turnoGuardado.deporte)}</span><h3>${sanitizeHTML(club?.nombre || turnoGuardado.club)}</h3><span class="summary-location">${sanitizeHTML([club?.localidad, club?.provincia].filter(Boolean).join(' · '))}</span></div>
+        <dl class="summary-facts"><div><dt>Fecha</dt><dd>${sanitizeHTML(formatFecha(turnoGuardado.fecha))}</dd></div><div><dt>Hora de inicio</dt><dd>${sanitizeHTML(turnoGuardado.hora)}</dd></div><div><dt>Duración</dt><dd>${formatDuracion(turnoGuardado.duracionTurno)}</dd></div></dl>
+        <div class="summary-total"><div><span>Total del turno</span><small>Estado: pendiente de confirmación</small></div><strong>$${(Number(turnoGuardado.precio) || 0).toLocaleString('es-AR')}</strong></div>
+      `;
+      const selectPago = document.getElementById('metodo-pago');
+      if (selectPago && !club?.pagoOnlineDisponible) selectPago.querySelector('option[value="online"]')?.remove();
+      agregarEventosDetalle();
+    }
     fetch(window.CanchalibreAuth.apiUrl(`/club/${encodeURIComponent(turnoGuardado.club)}`))
-      .then((res) => res.json())
-      .then((club) => {
-        detalleDiv.innerHTML = `
-          <h3>${sanitizeHTML(club?.nombre || turnoGuardado.club)}</h3>
-          <p>Deporte: ${sanitizeHTML(turnoGuardado.deporte)}</p>
-<p>Fecha: ${sanitizeHTML(formatFecha(turnoGuardado.fecha))}</p>
-          <p>Hora: ${sanitizeHTML(turnoGuardado.hora)}</p>
-          <p>Precio: $${Number(turnoGuardado.precio) || 0}</p>
-          <p>Duración: ${formatDuracion(turnoGuardado.duracionTurno)}</p>
-        `;
-
-        const selectPago = document.getElementById('metodo-pago');
-        if (selectPago && !club?.pagoOnlineDisponible) {
-          const opcionOnline = selectPago.querySelector('option[value="online"]');
-          if (opcionOnline) opcionOnline.remove();
-        }
-
-        agregarEventosDetalle();
-      })
-      .catch(() => {
-        detalleDiv.innerHTML = `
-          <h3>${sanitizeHTML(turnoGuardado.club)}</h3>
-          <p>Deporte: ${sanitizeHTML(turnoGuardado.deporte)}</p>
-<p>Fecha: ${sanitizeHTML(formatFecha(turnoGuardado.fecha))}</p>
-          <p>Hora: ${sanitizeHTML(turnoGuardado.hora)}</p>
-          <p>Precio: $${Number(turnoGuardado.precio) || 0}</p>
-          <p>Duración: ${formatDuracion(turnoGuardado.duracionTurno)}</p>
-        `;
-        agregarEventosDetalle();
-      });
+      .then(res => { if (!res.ok) throw new Error('Club no disponible'); return res.json(); })
+      .then(mostrarResumen)
+      .catch(() => mostrarResumen(null));
 
     function agregarEventosDetalle() {
       const pago = document.getElementById('metodo-pago');
