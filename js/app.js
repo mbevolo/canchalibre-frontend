@@ -414,7 +414,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   // --- Login/Logout + protección de vistas ---
-  const email = localStorage.getItem('usuarioLogueado');
+  const auth = window.CanchalibreAuth;
+  let usuario = null;
+  if (auth && await auth.requireUserSession()) {
+    const respuestaUsuario = await auth.authFetch('/auth/me');
+    if (respuestaUsuario.ok) usuario = await respuestaUsuario.json();
+  }
+  const email = usuario?.email;
   const spanUsuario = document.getElementById('usuario-logueado');
   const botonLogout = document.getElementById('logout');
 
@@ -423,8 +429,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (botonLogout) {
       botonLogout.style.display = 'inline';
-      botonLogout.addEventListener('click', () => {
-        localStorage.removeItem('usuarioLogueado');
+      botonLogout.addEventListener('click', async () => {
+        await auth.logoutUser();
         window.location.href = 'login.html';
       });
     }
@@ -610,21 +616,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       const botonConfirmar = document.getElementById('confirmar-reserva');
       if (botonConfirmar) {
         botonConfirmar.addEventListener('click', async function () {
-          const usuarioEmail = localStorage.getItem('usuarioLogueado');
 
           try {
 const selectPago = document.getElementById('metodo-pago');
 const metodoPagoSeleccionado = selectPago ? selectPago.value : 'efectivo';
 
-const respuesta = await fetch('https://api.canchalibre.ar/reservas/hold', {
+const respuesta = await auth.authFetch('/reservas/hold', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     canchaId: sanitizeHTML(turnoGuardado.canchaId),
     fecha: sanitizeHTML(turnoGuardado.fecha),
     hora: sanitizeHTML(turnoGuardado.hora),
-    usuarioId: null,
-    email: sanitizeHTML(usuarioEmail),
     metodoPago: metodoPagoSeleccionado
   })
 });
