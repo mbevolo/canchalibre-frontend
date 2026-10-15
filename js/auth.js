@@ -138,15 +138,17 @@ if (formRegistro) {
     }
 
     const normalizarTelefonoFront = tel => {
-      let t = String(tel || '').replace(/\D/g, '');
-      if (!t) return '';
-      if (!t.startsWith('549')) t = '549' + t;
-      return t;
+      if (/[^\d+\s().-]/.test(tel)) return '';
+      let n = tel.replace(/\D/g, '');
+      if(n.startsWith('549') && n.length===13) n=n.slice(3);
+      else if(n.startsWith('54') && n.length===12) n=n.slice(2);
+      return /^[1-9]\d{9}$/.test(n) ? '549'+n : '';
     };
 
     const nombre = document.getElementById('nombre')?.value?.trim() || '';
     const apellido = document.getElementById('apellido')?.value?.trim() || '';
     const telefono = normalizarTelefonoFront(document.getElementById('telefono')?.value || '');
+    if (!telefono) { alert('Ingresá tu celular con código de área y número: 10 dígitos, sin 0 ni 15.'); return; }
     const email = document.getElementById('email')?.value?.trim() || '';
     const password = document.getElementById('password')?.value || '';
 

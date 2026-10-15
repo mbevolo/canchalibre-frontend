@@ -703,7 +703,7 @@ const respuesta = await auth.authFetch('/reservas/hold', {
             const data = await respuesta.json();
 
             if (respuesta.ok) {
-              alert('✅ Te enviamos un correo electrónico para confirmar tu reserva. Revisá tu bandeja de entrada o SPAM.');
+              alert(data.mensaje || 'Revisá el mensaje recibido para confirmar tu reserva.');
               window.location.href = 'index.html';
             } else {
               alert('❌ No se pudo crear la reserva: ' + (data.error || 'Error desconocido.'));

@@ -61,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
         content.innerHTML = `<h2>Clubes Destacados</h2><p>Cargando clubes destacados...</p>`;
         cargarDestacados();
         break;
+      case 'notificaciones':
+        cargarNotificaciones();
+        break;
       case 'mercadopago':
         content.innerHTML = '<h2>MercadoPago</h2><p>Cargando tu cuenta de cobro…</p>';
         cargarMercadoPago();
@@ -817,6 +820,39 @@ async function cargarMercadoPago() {
       finally { form.querySelectorAll('input[type=password]').forEach(input=>input.value='');button.disabled=false; }
     });
   } catch(error) { if(generation===sectionGeneration) content.innerHTML=`<h2>MercadoPago</h2><div class="alert alert-danger">${escapeAdminHtml(error.message)}</div>`; }
+}
+
+async function cargarNotificaciones() {
+  const generation = sectionGeneration;
+  content.innerHTML = '<h2>Confirmación de reservas</h2><p>Cargando configuración…</p>';
+  try {
+    const data = await adminGet('/superadmin/reservas-notificaciones');
+    if (generation !== sectionGeneration) return;
+    const n = data.notifications;
+    content.innerHTML = `<h2>Confirmación de reservas</h2><p>Elegí cómo se envían el enlace de confirmación y el resumen de los turnos. La verificación de cuenta y la recuperación de contraseña continúan por correo.</p>
+      <form id="notifications-form" class="admin-mp-form">
+      <label class="form-label" for="reservation-channel">Canal de confirmación</label>
+      <select id="reservation-channel" class="form-select mb-3"><option value="whatsapp" ${n.channel==='whatsapp'?'selected':''}>WhatsApp · principal</option><option value="email" ${n.channel==='email'?'selected':''}>Correo electrónico</option></select>
+      <p>${n.configured?'Credenciales de GREEN-API guardadas.':'Conectá el número de CanchaLibre para activar WhatsApp.'}</p>
+      <label class="form-label" for="green-instance">idInstance</label><input id="green-instance" class="form-control mb-3" value="${escapeAdminHtml(n.instanceId)}" autocomplete="off">
+      <label class="form-label" for="green-url">apiUrl de GREEN-API</label><input id="green-url" type="url" class="form-control mb-3" value="${escapeAdminHtml(n.apiUrl)}">
+      <label class="form-label" for="green-token">apiTokenInstance</label><input id="green-token" type="password" class="form-control mb-3" autocomplete="new-password" placeholder="${n.configured?'Dejá vacío para conservar la clave':'Pegá la clave de tu instancia'}">
+      <button class="btn btn-primary" type="submit">Verificar y guardar</button><p id="notifications-feedback" role="status" class="mt-3"></p></form>
+      <p>Creá una instancia en <a href="https://console.green-api.com/" target="_blank" rel="noopener">GREEN-API</a>, vinculá el número de CanchaLibre escaneando el QR y copiá sus tres datos acá. Al guardar WhatsApp se verifica que la instancia esté conectada. Todos los clubes usan ese mismo remitente.</p>`;
+    document.getElementById('notifications-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form=e.currentTarget, button=form.querySelector('button'), feedback=document.getElementById('notifications-feedback');
+      button.disabled=true; feedback.textContent='Verificando…';
+      const body={channel:document.getElementById('reservation-channel').value};
+      for (const [key,id] of [['instanceId','green-instance'],['apiUrl','green-url'],['apiToken','green-token']]) { const value=document.getElementById(id).value.trim(); if(value) body[key]=value; }
+      try {
+        const response=await fetch(window.CanchaLibreApiUrl('/superadmin/reservas-notificaciones'), {method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const result=await response.json(); if(!response.ok) throw new Error(result.msg || 'No se pudo guardar');
+        feedback.textContent='Guardado. Las próximas confirmaciones se enviarán por '+(body.channel==='whatsapp'?'WhatsApp.':'correo electrónico.');
+      } catch(error) { feedback.textContent=error.message; }
+      finally { document.getElementById('green-token').value=''; button.disabled=false; }
+    });
+  } catch(error) { if(generation===sectionGeneration) content.textContent=error.message; }
 }
 
 });

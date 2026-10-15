@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           botones = '';
         } else if (pendiente) {
           botones =
-            '<button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="' + escapeHtml(r._id) + '">🔁 Reenviar correo</button>' +
+            '<button class="btn btn-sm btn-outline-primary btn-reenviar" data-id="' + escapeHtml(r._id) + '">🔁 Reenviar confirmación</button>' +
             ' <button class="btn btn-sm btn-outline-danger btn-cancelar-pendiente" data-id="' + escapeHtml(r._id) + '">Cancelar</button>';
         } else {
           botones =
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (resend) {
-        alert(data.mensaje || 'Correo reenviado.');
+        alert(data.mensaje || 'Confirmación reenviada.');
       } else if (pay) {
         let url;
         try { url = new URL(data.pagoUrl); } catch (_) { throw new Error('Link inválido'); }
